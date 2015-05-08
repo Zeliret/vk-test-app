@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/chat_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        tools:text="23:17"/>
+
+    <TextView
+        android:id="@+id/chat_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_toLeftOf="@id/chat_time"
+        android:ellipsize="end"
+        android:singleLine="true"
+        tools:text="Заголовок беседы"/>
+
+    <TextView
+        android:id="@+id/chat_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/chat_title"
+        android:ellipsize="end"
+        android:singleLine="true"
+        tools:text="Последнее сообщение"/>
+
+
+</RelativeLayout>

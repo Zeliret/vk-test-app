@@ -12,4 +12,23 @@
         android:theme="@style/ThemeOverlay.AppCompat.Dark"
         app:title="@string/title_activity_chat_list"/>
 
+    <ListView
+        android:id="@+id/chat_list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/toolbar"
+        android:visibility="invisible"/>
+
+    <FrameLayout
+        android:id="@+id/chat_list_progress"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/toolbar">
+
+        <ProgressBar
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"/>
+    </FrameLayout>
+
 </RelativeLayout>

@@ -21,6 +21,11 @@ public abstract class AbstractActivity extends AppCompatActivity {
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         VKUIHelper.onCreate(this);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
         initAuthentication();
     }
 
