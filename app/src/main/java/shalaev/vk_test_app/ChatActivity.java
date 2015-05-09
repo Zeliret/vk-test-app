@@ -9,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -22,6 +23,7 @@ import java.util.Date;
 import java.util.Observable;
 
 import shalaev.vk_test_app.model.ChatManager;
+import shalaev.vk_test_app.utils.AvatarUtils;
 
 
 public class ChatActivity extends AbstractActivity {
@@ -162,9 +164,13 @@ public class ChatActivity extends AbstractActivity {
 
     public static final class MessagesAdapter extends ArrayAdapter<JSONObject> {
         private static final int[] RES = {
+                R.layout.list_item_msg_in_first,
                 R.layout.list_item_msg_in,
                 R.layout.list_item_msg_out
         };
+        private static final int TYPE_IN_FIRST = 0;
+        private static final int TYPE_IN = 1;
+        private static final int TYPE_OUT = 2;
         private final LayoutInflater inflater;
         private final DateFormat dateFormat = DateFormat.getTimeInstance(DateFormat.SHORT);
 
@@ -193,6 +199,10 @@ public class ChatActivity extends AbstractActivity {
             vh.body.setText(message.optString("body"));
             vh.time.setText(dateFormat.format(new Date(message.optLong("date") * 1000)));
 
+            if( null != vh.avatar ){
+                //AvatarUtils.loadChatAvatar(getContext(), message, vh.avatar);
+            }
+
             return view;
         }
 
@@ -206,14 +216,26 @@ public class ChatActivity extends AbstractActivity {
 
         @Override
         public int getViewTypeCount() {
-            return 2;
+            return RES.length;
         }
 
         @Override
         public int getItemViewType(final int position) {
             JSONObject message = getItem(position);
-
-            return message.optInt("out");
+            if (message.optInt("out") > 0) {
+                return TYPE_OUT;
+            } else {
+                try {
+                    JSONObject prevMessage = getItem(position - 1);
+                    if (prevMessage.optInt("user_id") == message.optInt("user_id")) {
+                        return TYPE_IN;
+                    } else {
+                        return TYPE_IN_FIRST;
+                    }
+                } catch (IndexOutOfBoundsException e) {
+                    return TYPE_IN_FIRST;
+                }
+            }
         }
 
         @Override
@@ -222,10 +244,12 @@ public class ChatActivity extends AbstractActivity {
         }
 
         private class ViewHolder {
+            public final ImageView avatar;
             public final TextView body;
             public final TextView time;
 
             public ViewHolder(final View view) {
+                avatar = (ImageView) view.findViewById(R.id.message_avatar);
                 body = (TextView) view.findViewById(R.id.message_body);
                 time = (TextView) view.findViewById(R.id.message_time);
             }
