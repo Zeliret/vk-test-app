@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -22,6 +23,7 @@ import java.util.Date;
 import java.util.Observable;
 
 import shalaev.vk_test_app.model.ChatListManager;
+import shalaev.vk_test_app.utils.AvatarUtils;
 
 
 public class ChatListActivity extends AbstractActivity {
@@ -154,10 +156,12 @@ public class ChatListActivity extends AbstractActivity {
                 vh = (ViewHolder) view.getTag();
             }
 
-            JSONObject item = getItem(position);
-            vh.title.setText(item.optString("title"));
-            vh.message.setText(item.optString("body"));
-            vh.time.setText(dateFormat.format(new Date(item.optLong("date") * 1000)));
+            JSONObject chat = getItem(position);
+            vh.title.setText(chat.optString("title"));
+            vh.message.setText(chat.optString("body"));
+            vh.time.setText(dateFormat.format(new Date(chat.optLong("date") * 1000)));
+
+            AvatarUtils.loadChatAvatar(getContext(), chat, vh.avatar);
 
             return view;
         }
@@ -168,11 +172,13 @@ public class ChatListActivity extends AbstractActivity {
         }
 
         private class ViewHolder {
+            public final ImageView avatar;
             public final TextView title;
             public final TextView message;
             public final TextView time;
 
             public ViewHolder(final View view) {
+                avatar = (ImageView) view.findViewById(R.id.chat_avatar);
                 title = (TextView) view.findViewById(R.id.chat_title);
                 message = (TextView) view.findViewById(R.id.chat_message);
                 time = (TextView) view.findViewById(R.id.chat_time);

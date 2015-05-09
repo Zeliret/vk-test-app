@@ -12,4 +12,21 @@
         <item name="android:elevation" tools:ignore="NewApi">4dp</item>
     </style>
 
+
+    <style name="TextAppearance.Custom.Chat" parent="TextAppearance.AppCompat.Medium" />
+    <style name="TextAppearance.Custom.Chat.Title">
+        <item name="android:textSize">@dimen/ts_chat_title</item>
+        <item name="android:textColor">?android:textColorPrimary</item>
+    </style>
+
+    <style name="TextAppearance.Custom.Chat.Subtitle">
+        <item name="android:textSize">@dimen/ts_chat_subtitle</item>
+        <item name="android:textColor">?android:textColorSecondary</item>
+    </style>
+
+    <style name="TextAppearance.Custom.Chat.Time">
+        <item name="android:textSize">@dimen/ts_chat_time</item>
+        <item name="android:textColor">?android:textColorSecondary</item>
+    </style>
+
 </resources>

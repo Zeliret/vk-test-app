@@ -8,8 +8,8 @@ import java.util.ArrayList;
 import java.util.Observable;
 
 public abstract class Manager extends Observable {
-    private final Context context;
-    private ArrayList<JSONObject> data;
+    protected final Context context;
+    private Object data;
 
     protected Manager(final Context context) {this.context = context;}
 
@@ -27,7 +27,7 @@ public abstract class Manager extends Observable {
 
     protected abstract void loadData();
 
-    protected void deliverData(final ArrayList<JSONObject> data) {
+    protected void deliverData(final Object data) {
         this.data = data;
         setChanged();
         notifyObservers(data);

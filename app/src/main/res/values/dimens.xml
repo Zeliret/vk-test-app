@@ -1,2 +1,8 @@
 <resources>
+    <dimen name="content_padding">16dp</dimen>
+    <dimen name="content_padding_narrow">8dp</dimen>
+
+    <dimen name="ts_chat_title">16sp</dimen>
+    <dimen name="ts_chat_subtitle">15sp</dimen>
+    <dimen name="ts_chat_time">15sp</dimen>
 </resources>

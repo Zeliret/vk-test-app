@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#666"
+                android:padding="@dimen/content_padding">
+
+    <TextView
+        android:id="@+id/message_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        tools:text="23:17"/>
+
+    <TextView
+        android:id="@+id/message_body"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/chat_title"
+        android:background="@drawable/msg_out"
+        android:ellipsize="end"
+        android:padding="@dimen/content_padding"
+        android:singleLine="true"
+        tools:text="Ссообщение"/>
+
+
+</RelativeLayout>

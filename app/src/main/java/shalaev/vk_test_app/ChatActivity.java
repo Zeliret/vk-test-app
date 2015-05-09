@@ -161,12 +161,15 @@ public class ChatActivity extends AbstractActivity {
     }
 
     public static final class MessagesAdapter extends ArrayAdapter<JSONObject> {
-        private static final int RESOURCE_ID = R.layout.list_item_message;
+        private static final int[] RES = {
+                R.layout.list_item_msg_in,
+                R.layout.list_item_msg_out
+        };
         private final LayoutInflater inflater;
         private final DateFormat dateFormat = DateFormat.getTimeInstance(DateFormat.SHORT);
 
         public MessagesAdapter(final Context context) {
-            super(context, RESOURCE_ID, new ArrayList<JSONObject>());
+            super(context, 0, new ArrayList<JSONObject>());
             inflater = LayoutInflater.from(context);
         }
 
@@ -180,17 +183,37 @@ public class ChatActivity extends AbstractActivity {
             View view = convertView;
             ViewHolder vh;
             if (null == view) {
-                view = inflater.inflate(RESOURCE_ID, parent, false);
+                view = inflater.inflate(RES[getItemViewType(position)], parent, false);
                 view.setTag(vh = new ViewHolder(view));
             } else {
                 vh = (ViewHolder) view.getTag();
             }
 
-            JSONObject item = getItem(position);
-            vh.body.setText(item.optString("body"));
-            vh.time.setText(dateFormat.format(new Date(item.optLong("date") * 1000)));
+            JSONObject message = getItem(position);
+            vh.body.setText(message.optString("body"));
+            vh.time.setText(dateFormat.format(new Date(message.optLong("date") * 1000)));
 
             return view;
+        }
+
+        @Override
+        public JSONObject getItem(final int position) {
+            int count = getCount();
+            int reversePos = (count > 0 ? count - 1 : 0) - position;
+
+            return super.getItem(reversePos);
+        }
+
+        @Override
+        public int getViewTypeCount() {
+            return 2;
+        }
+
+        @Override
+        public int getItemViewType(final int position) {
+            JSONObject message = getItem(position);
+
+            return message.optInt("out");
         }
 
         @Override
