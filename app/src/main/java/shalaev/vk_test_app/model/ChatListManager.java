@@ -1,5 +1,6 @@
-package shalaev.vk_test_app;
+package shalaev.vk_test_app.model;
 
+import android.content.Context;
 import android.util.Log;
 
 import com.vk.sdk.api.VKError;
@@ -10,24 +11,12 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Observable;
 
-public class ChatListManager extends Observable {
-    private ArrayList<JSONObject> data;
+public class ChatListManager extends Manager {
+    public ChatListManager(final Context context) {super(context);}
 
-    public void request(final boolean force) {
-        if (force) {
-            loadData();
-        } else {
-            if (null != data) {
-                deliverData(data);
-            } else {
-                loadData();
-            }
-        }
-    }
-
-    private void loadData() {
+    @Override
+    protected void loadData() {
         VKRequest vkRequest = new VKRequest("messages.getDialogs");
         vkRequest.executeWithListener(new VKRequest.VKRequestListener() {
             @Override
@@ -35,7 +24,8 @@ public class ChatListManager extends Observable {
                 Log.d("VK", response.responseString);
                 JSONObject jsonData = response.json.optJSONObject("response");
                 JSONArray jsonItems = jsonData.optJSONArray("items");
-                parseItems(jsonItems);
+                ArrayList<JSONObject> data = parseItems(jsonItems);
+                deliverData(data);
             }
 
             @Override
@@ -45,7 +35,7 @@ public class ChatListManager extends Observable {
         });
     }
 
-    private void parseItems(final JSONArray jsonItems) {
+    private ArrayList<JSONObject> parseItems(final JSONArray jsonItems) {
         ArrayList<JSONObject> data = new ArrayList<>();
 
         int length = jsonItems.length();
@@ -56,17 +46,6 @@ public class ChatListManager extends Observable {
                 data.add(jsonMessage);
             }
         }
-        deliverData(data);
-    }
-
-    private void deliverData(final ArrayList<JSONObject> data) {
-        this.data = data;
-        setChanged();
-        notifyObservers(data);
-    }
-
-    private void deliverError(final String error) {
-        setChanged();
-        notifyObservers(error);
+        return data;
     }
 }

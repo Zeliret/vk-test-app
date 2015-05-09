@@ -14,7 +14,9 @@ import com.vk.sdk.VKSdkListener;
 import com.vk.sdk.VKUIHelper;
 import com.vk.sdk.api.VKError;
 
-public abstract class AbstractActivity extends AppCompatActivity {
+import java.util.Observer;
+
+public abstract class AbstractActivity extends AppCompatActivity implements Observer {
     private static boolean authProgress = false;
 
     @Override
@@ -28,6 +30,10 @@ public abstract class AbstractActivity extends AppCompatActivity {
         super.onStart();
         initAuthentication();
     }
+
+    protected abstract void setupManagerFragment();
+
+    protected abstract void setupViews();
 
     protected abstract void onAuthSuccess();
 

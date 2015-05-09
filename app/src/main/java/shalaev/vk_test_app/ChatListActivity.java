@@ -1,12 +1,14 @@
 package shalaev.vk_test_app;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -18,15 +20,17 @@ import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Observable;
-import java.util.Observer;
+
+import shalaev.vk_test_app.model.ChatListManager;
 
 
-public class ChatListActivity extends AbstractActivity implements Observer {
-    private ListView list;
+public class ChatListActivity extends AbstractActivity {
+    private ListView listView;
+    private View progressView;
     private ChatListAdapter adapter;
-    private View progress;
     private ChatListManager chatListManager;
     private Bundle savedState;
+    private ManagerFragment fragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,39 +38,47 @@ public class ChatListActivity extends AbstractActivity implements Observer {
         setContentView(R.layout.activity_chat_list);
         setupToolbar(R.id.toolbar);
         setupViews();
-    }
-
-    private void setupViews() {
-        list = (ListView) findViewById(R.id.chat_list);
-        list.setAdapter(adapter = new ChatListAdapter(this));
-
-        progress = findViewById(R.id.chat_list_progress);
+        setupManagerFragment();
     }
 
     @Override
-    protected void onAuthSuccess() {
-        initManagerFragment();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        chatListManager.deleteObserver(this);
-    }
-
-    private void initManagerFragment() {
+    protected void setupManagerFragment() {
         FragmentManager fm = getSupportFragmentManager();
-        ManagerFragment fragment = (ManagerFragment) fm.findFragmentByTag(ManagerFragment.TAG);
+        fragment = (ManagerFragment) fm.findFragmentByTag(ManagerFragment.TAG);
         if (null == fragment) {
             fragment = new ManagerFragment();
             fm.beginTransaction()
               .add(fragment, ManagerFragment.TAG)
               .commit();
         }
+    }
 
-        chatListManager = fragment.manager;
+    @Override
+    protected void setupViews() {
+        listView = (ListView) findViewById(R.id.chat_list);
+        listView.setAdapter(adapter = new ChatListAdapter(this));
+        listView.setOnItemClickListener(new ListItemClickListener());
+
+        progressView = findViewById(R.id.chat_list_progress);
+    }
+
+    private void openChat(final JSONObject chatItem) {
+        Intent intent = new Intent(this, ChatActivity.class)
+                .putExtra(ChatActivity.KEY_CHAT, chatItem.toString());
+        startActivity(intent);
+    }
+
+    @Override
+    protected void onAuthSuccess() {
+        chatListManager = fragment.getManager();
         chatListManager.addObserver(ChatListActivity.this);
         chatListManager.request(null == savedState);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        chatListManager.deleteObserver(this);
     }
 
     @Override
@@ -75,7 +87,7 @@ public class ChatListActivity extends AbstractActivity implements Observer {
             if (data instanceof ArrayList) {
                 @SuppressWarnings("unchecked")
                 ArrayList<JSONObject> items = (ArrayList<JSONObject>) data;
-                updateAdapter(items);
+                render(items);
             } else if (data instanceof String) {
                 // TODO: error
                 Toast.makeText(this, (String) data, Toast.LENGTH_LONG).show();
@@ -83,23 +95,36 @@ public class ChatListActivity extends AbstractActivity implements Observer {
         }
     }
 
-    private void updateAdapter(final ArrayList<JSONObject> items) {
+    private void render(final ArrayList<JSONObject> items) {
         adapter.clear();
         adapter.addAll(items);
-        if (list.getVisibility() != View.VISIBLE) {
-            list.setVisibility(View.VISIBLE);
-            progress.setVisibility(View.INVISIBLE);
+        if (listView.getVisibility() != View.VISIBLE) {
+            listView.setVisibility(View.VISIBLE);
+            progressView.setVisibility(View.INVISIBLE);
         }
     }
 
     public static final class ManagerFragment extends Fragment {
         public static final String TAG = ManagerFragment.class.getName();
-        public final ChatListManager manager = new ChatListManager();
+        private ChatListManager manager;
 
         @Override
         public void onCreate(final Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             setRetainInstance(true);
+        }
+
+        @Override
+        public void onActivityCreated(final Bundle savedInstanceState) {
+            super.onActivityCreated(savedInstanceState);
+
+            if (null == manager) {
+                manager = new ChatListManager(getActivity());
+            }
+        }
+
+        public ChatListManager getManager() {
+            return manager;
         }
     }
 
@@ -152,6 +177,15 @@ public class ChatListActivity extends AbstractActivity implements Observer {
                 message = (TextView) view.findViewById(R.id.chat_message);
                 time = (TextView) view.findViewById(R.id.chat_time);
             }
+        }
+    }
+
+    private class ListItemClickListener implements AdapterView.OnItemClickListener {
+        @Override
+        public void onItemClick(final AdapterView<?> parent, final View view, final int position,
+                                final long id) {
+            JSONObject item = adapter.getItem(position);
+            openChat(item);
         }
     }
 }
