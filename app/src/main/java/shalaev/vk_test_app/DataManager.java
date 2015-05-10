@@ -108,7 +108,7 @@ public class DataManager {
         LOCAL_EVENT_BUS.post(new ChatTask(chatId));
     }
 
-    private interface TaskEvent extends Runnable { }
+    private interface TaskEvent extends Runnable {}
 
     public static class CursorEvent {
         public final boolean fromCache;
@@ -136,18 +136,21 @@ public class DataManager {
     }
 
     public static class MessagesReadyEvent extends CursorEvent {
+        public final int loaded;
         public final int total;
 
-        public MessagesReadyEvent(final Cursor cursor, final int total) {
-            this(false, cursor, total);
+        public MessagesReadyEvent(final Cursor cursor, final int loaded, final int total) {
+            this(false, cursor, loaded, total);
         }
 
         public MessagesReadyEvent(final boolean fromCache, final Cursor cursor) {
-            this(fromCache, cursor, 0);
+            this(fromCache, cursor, 0, 0);
         }
 
-        public MessagesReadyEvent(final boolean fromCache, final Cursor cursor, final int total) {
+        public MessagesReadyEvent(final boolean fromCache, final Cursor cursor, final int loaded,
+                                  final int total) {
             super(fromCache, cursor);
+            this.loaded = loaded;
             this.total = total;
         }
     }
@@ -339,7 +342,8 @@ public class DataManager {
                                 storeMessages(chatId, response);
 
                                 int total = getTotalFromResponse(response);
-                                EVENT_BUS.post(new MessagesReadyEvent(getMessages(chatId), total));
+                                EVENT_BUS.post(new MessagesReadyEvent(getMessages(chatId), COUNT,
+                                                                      total));
                             }
                         });
                     }

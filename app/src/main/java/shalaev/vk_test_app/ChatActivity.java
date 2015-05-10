@@ -58,8 +58,7 @@ public class ChatActivity extends AbstractActivity {
 
     @SuppressWarnings("unused")
     public void onEventMainThread(final DataManager.MessagesReadyEvent event) {
-        render(event.cursor);
-        total = event.total;
+        render(event.cursor, event.loaded, event.total);
     }
 
     @SuppressWarnings("unused")
@@ -98,8 +97,16 @@ public class ChatActivity extends AbstractActivity {
         dataManager.requestMessages(chatId);
     }
 
-    private void render(final Cursor cursor) {
-        adapter.changeCursor(cursor);
+    private void render(final Cursor cursor, final int loaded, final int total) {
+        this.total = total;
+
+
+        Cursor oldCursor = adapter.swapCursor(cursor);
+        if (null != oldCursor) {
+            cursor.moveToPosition(cursor.getCount() - oldCursor.getCount());
+        }
+
+
         if (listView.getVisibility() != View.VISIBLE) {
             listView.setVisibility(View.VISIBLE);
             progressView.setVisibility(View.INVISIBLE);
@@ -205,7 +212,7 @@ public class ChatActivity extends AbstractActivity {
                 if (null != c) {
                     int pos = c.getPosition();
                     int count = c.getCount();
-                    if (pos == count && count < total) {
+                    if (pos == 0 && count < total) {
                         scrollReady = false;
                         dataManager.requestMessages(chatId, c.getCount(), DataManager.SERVER);
                     }
