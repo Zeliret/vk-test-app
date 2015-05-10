@@ -66,15 +66,44 @@ public class DataManager {
                 Log.d("VK", response.responseString);
                 JSONObject jsonData = response.json.optJSONObject("response");
                 JSONArray jsonItems = jsonData.optJSONArray("items");
-                ArrayList<JSONObject> items = new ArrayList<>();
 
+                ArrayList<JSONObject> items = new ArrayList<>();
+                int length = jsonItems.length();
+                for (int i = 0; i < length; i++) {
+                    JSONObject jsonItem = jsonItems.optJSONObject(i);
+                    items.add(jsonItem);
+                }
+                messages.put(chatId, items);
+                EVENT_BUS.post(new MessagesEvent(items));
+            }
+
+            @Override
+            public void onError(final VKError error) {
+                Log.d("VK ERROR", error.toString());
+                EVENT_BUS.post(new ErrorEvent(error));
+            }
+        });
+    }
+
+    public void requestMessagesExtra(final int chatId, final int offset) {
+        VKRequest vkRequest = new VKRequest(
+                "messages.getHistory",
+                VKParameters.from("chat_id", chatId, "offset", offset));
+        vkRequest.executeWithListener(new VKRequest.VKRequestListener() {
+            @Override
+            public void onComplete(final VKResponse response) {
+                Log.d("VK", response.responseString);
+                JSONObject jsonData = response.json.optJSONObject("response");
+                JSONArray jsonItems = jsonData.optJSONArray("items");
+
+                ArrayList<JSONObject> items = new ArrayList<>();
                 int length = jsonItems.length();
                 for (int i = 0; i < length; i++) {
                     JSONObject jsonItem = jsonItems.optJSONObject(i);
                     items.add(jsonItem);
                     messages.get(chatId).add(jsonItem);
                 }
-                EVENT_BUS.post(new MessagesEvent(items));
+                EVENT_BUS.post(new MessagesExtraEvent(items, offset));
             }
 
             @Override
@@ -144,6 +173,16 @@ public class DataManager {
         public final ArrayList<JSONObject> items;
 
         public MessagesEvent(final ArrayList<JSONObject> items) {this.items = items;}
+    }
+
+    public static class MessagesExtraEvent {
+        public final ArrayList<JSONObject> items;
+        public final int offset;
+
+        public MessagesExtraEvent(final ArrayList<JSONObject> items, final int offset) {
+            this.items = items;
+            this.offset = offset;
+        }
     }
 
     public static class UsersEvent {

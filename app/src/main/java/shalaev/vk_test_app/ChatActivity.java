@@ -3,9 +3,11 @@ package shalaev.vk_test_app;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -23,12 +25,15 @@ import shalaev.vk_test_app.utils.AvatarUtils;
 
 public class ChatActivity extends AbstractActivity {
     public static final String KEY_CHAT = "chat";
+    private static final int THRESHOLD = 5;
     private ListView listView;
     private View progressView;
     private JSONObject chat;
     private Bundle savedState;
     private MessagesAdapter adapter;
     private DataManager dataManager = DataManager.getInstance();
+    private int chatId;
+    private boolean scrollReady = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,11 +47,14 @@ public class ChatActivity extends AbstractActivity {
     protected void setupViews() {
         listView = (ListView) findViewById(R.id.messages_list);
         listView.setAdapter(adapter = new MessagesAdapter(this));
+        listView.setOnScrollListener(new MessagesScrollListener());
 
         progressView = findViewById(R.id.messages_list_progress);
 
         try {
             chat = new JSONObject(getIntent().getStringExtra(KEY_CHAT));
+            chatId = chat.optInt("chat_id");
+
             TextView titleView = (TextView) findViewById(R.id.toolbar_title);
             titleView.setText(chat.optString("title"));
 
@@ -71,7 +79,6 @@ public class ChatActivity extends AbstractActivity {
 
     @Override
     protected void onAuthSuccess() {
-        int chatId = chat.optInt("chat_id");
         ArrayList<JSONObject> messages = dataManager.getChatMessages(chatId);
         if (null == messages) {
             dataManager.requestMessages(chatId);
@@ -85,6 +92,22 @@ public class ChatActivity extends AbstractActivity {
         render(event.items);
     }
 
+    @SuppressWarnings("unused")
+    public void onEventMainThread(final DataManager.MessagesExtraEvent event) {
+        renderAppend(event.items);
+    }
+
+    private void renderAppend(final ArrayList<JSONObject> items) {
+        int firstVisibleItem = listView.getFirstVisiblePosition();
+        int oldCount = adapter.getCount();
+        View view = listView.getChildAt(0);
+        int pos = (view == null ? 0 :  view.getBottom());
+
+        adapter.addAll(items);
+        listView.setSelectionFromTop(firstVisibleItem + adapter.getCount() - oldCount + 1, pos);
+        scrollReady = true;
+    }
+
     private void render(final ArrayList<JSONObject> items) {
         adapter.clear();
         adapter.addAll(items);
@@ -92,6 +115,7 @@ public class ChatActivity extends AbstractActivity {
             listView.setVisibility(View.VISIBLE);
             progressView.setVisibility(View.INVISIBLE);
         }
+        scrollReady = true;
     }
 
     public static final class MessagesAdapter extends ArrayAdapter<JSONObject> {
@@ -188,6 +212,24 @@ public class ChatActivity extends AbstractActivity {
                 avatar = (ImageView) view.findViewById(R.id.message_avatar);
                 body = (TextView) view.findViewById(R.id.message_body);
                 time = (TextView) view.findViewById(R.id.message_time);
+            }
+        }
+    }
+
+    private class MessagesScrollListener implements AbsListView.OnScrollListener {
+        @Override
+        public void onScrollStateChanged(final AbsListView view, final int scrollState) {
+
+        }
+
+        @Override
+        public void onScroll(final AbsListView view, final int firstVisibleItem,
+                             final int visibleItemCount,
+                             final int totalItemCount) {
+            if (scrollReady && firstVisibleItem < THRESHOLD) {
+                scrollReady = false;
+
+                dataManager.requestMessagesExtra(chatId, totalItemCount);
             }
         }
     }
