@@ -9,6 +9,7 @@ import android.support.v7.app.ActionBar;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -20,6 +21,7 @@ import shalaev.vk_test_app.utils.AvatarUtils;
 
 
 public class ChatActivity extends AbstractActivity {
+    private static final int LOAD_MODE_OFFSET = 10;
     public static final String KEY_CHAT_ID = "chat_id";
     private ListView listView;
     private View progressView;
@@ -27,6 +29,8 @@ public class ChatActivity extends AbstractActivity {
     private MessagesAdapter adapter;
     private int chatId;
     private DataManager dataManager;
+    private boolean scrollReady = false;
+    private int total = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,6 +46,8 @@ public class ChatActivity extends AbstractActivity {
     protected void setupViews() {
         listView = (ListView) findViewById(R.id.messages_list);
         listView.setAdapter(adapter = new MessagesAdapter(this, null));
+        listView.setOnScrollListener(new MessagesScrollListener());
+
         progressView = findViewById(R.id.messages_list_progress);
 
         chatId = getIntent().getIntExtra(KEY_CHAT_ID, 0);
@@ -64,6 +70,7 @@ public class ChatActivity extends AbstractActivity {
     @SuppressWarnings("unused")
     public void onEventMainThread(final DataManager.MessagesReadyEvent event) {
         render(event.cursor);
+        total = event.total;
     }
 
     @SuppressWarnings("unused")
@@ -86,11 +93,13 @@ public class ChatActivity extends AbstractActivity {
     }
 
     private void render(final Cursor cursor) {
-        adapter.swapCursor(cursor);
+        adapter.changeCursor(cursor);
         if (listView.getVisibility() != View.VISIBLE) {
             listView.setVisibility(View.VISIBLE);
             progressView.setVisibility(View.INVISIBLE);
         }
+
+        scrollReady = true;
     }
 
     public static final class MessagesAdapter extends CursorAdapter {
@@ -171,6 +180,30 @@ public class ChatActivity extends AbstractActivity {
                 avatar = (ImageView) view.findViewById(R.id.message_avatar);
                 body = (TextView) view.findViewById(R.id.message_body);
                 time = (TextView) view.findViewById(R.id.message_time);
+            }
+        }
+    }
+
+    private class MessagesScrollListener implements AbsListView.OnScrollListener {
+        @Override
+        public void onScrollStateChanged(final AbsListView view, final int scrollState) {
+
+        }
+
+        @Override
+        public void onScroll(final AbsListView view, final int firstVisibleItem,
+                             final int visibleItemCount,
+                             final int totalItemCount) {
+            if (scrollReady && null != adapter) {
+                Cursor c = adapter.getCursor();
+                if (null != c) {
+                    int pos = c.getPosition();
+                    int count = c.getCount();
+                    if (pos <= LOAD_MODE_OFFSET && total >= 0 && total > count) {
+                        scrollReady = false;
+                        dataManager.requestMessages(chatId, c.getCount(), DataManager.SERVER);
+                    }
+                }
             }
         }
     }

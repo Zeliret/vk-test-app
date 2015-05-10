@@ -40,6 +40,7 @@ public class ChatListActivity extends AbstractActivity {
     @Override
     protected void setupViews() {
         listView = (ListView) findViewById(R.id.chat_list);
+        listView.setAdapter(adapter = new ChatListAdapter(this, null));
         listView.setOnItemClickListener(new ListItemClickListener());
 
         progressView = findViewById(R.id.chat_list_progress);
@@ -71,13 +72,7 @@ public class ChatListActivity extends AbstractActivity {
     }
 
     private void render(final Cursor cursor) {
-        if (null == adapter) {
-            adapter = new ChatListAdapter(this, cursor);
-            listView.setAdapter(adapter);
-        } else {
-            adapter.swapCursor(cursor);
-        }
-
+        adapter.changeCursor(cursor);
         if (listView.getVisibility() != View.VISIBLE) {
             listView.setVisibility(View.VISIBLE);
             progressView.setVisibility(View.INVISIBLE);

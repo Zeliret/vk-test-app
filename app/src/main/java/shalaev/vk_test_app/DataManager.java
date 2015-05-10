@@ -24,6 +24,7 @@ import de.greenrobot.event.EventBus;
 public class DataManager {
     private static final EventBus EVENT_BUS = EventBus.getDefault();
     private static final EventBus LOCAL_EVENT_BUS = new EventBus();
+    public static final int COUNT = 50;
     public static int CACHE = 1;
     public static int SERVER = 2;
     public static int CACHE_SERVER = CACHE | SERVER;
@@ -60,21 +61,19 @@ public class DataManager {
     public void requestChats() {requestChats(CACHE_SERVER);}
 
     public void requestChats(final int flags) {
-        if ((flags & CACHE) == 1) {
+        if ((flags & CACHE) == CACHE) {
             if (getMark("chats")) {
-                EVENT_BUS.post(new ChatsReadyEvent(getChats()));
+                EVENT_BUS.post(new ChatsReadyEvent(true, getChats()));
             }
         }
 
-        if ((flags & SERVER) == 1 || !getMark("chats")) {
+        if ((flags & SERVER) == SERVER || !getMark("chats")) {
             VKRequest vkRequest = new VKRequest("messages.getDialogs");
             vkRequest.executeWithListener(new VKRequest.VKRequestListener() {
                 @Override
                 public void onComplete(final VKResponse response) {
                     Log.d("VK", response.responseString);
-                    JSONObject jsonData = response.json.optJSONObject("response");
-                    JSONArray jsonItems = jsonData.optJSONArray("items");
-                    storeChats(jsonItems);
+                    storeChats(response);
                     EVENT_BUS.post(new ChatsReadyEvent(getChats()));
                 }
 
@@ -87,10 +86,12 @@ public class DataManager {
         }
     }
 
-    private void storeChats(final JSONArray chats) {
-        int length = chats.length();
+    private void storeChats(final VKResponse response) {
+        JSONObject jsonData = response.json.optJSONObject("response");
+        JSONArray jsonItems = jsonData.optJSONArray("items");
+        int length = jsonItems.length();
         for (int i = 0; i < length; i++) {
-            JSONObject jsonItem = chats.optJSONObject(i);
+            JSONObject jsonItem = jsonItems.optJSONObject(i);
             JSONObject jsonMessage = jsonItem.optJSONObject("message");
             if (jsonMessage.has("chat_id")) {
                 ContentValues values = new ContentValues();
@@ -143,28 +144,32 @@ public class DataManager {
                 new String[]{String.valueOf(chatId)});
     }
 
-    public void requestMessages(final int chatId) {requestMessages(chatId, CACHE_SERVER);}
+    public void requestMessages(final int chatId) {requestMessages(chatId, 0);}
 
-    public void requestMessages(final int chatId, final int flags) {
+    public void requestMessages(final int chatId, final int offset) {
+        requestMessages(chatId, offset, CACHE_SERVER);
+    }
+
+    public void requestMessages(final int chatId, final int offset, final int flags) {
         boolean mark = getMark(String.format("messages:%d", chatId));
-        if ((flags & CACHE) == 1) {
+        if ((flags & CACHE) == CACHE) {
             if (mark) {
-                EVENT_BUS.post(new MessagesReadyEvent(getMessages(chatId)));
+                EVENT_BUS.post(new MessagesReadyEvent(true, getMessages(chatId)));
             }
         }
 
-        if ((flags & SERVER) == 1 || !mark) {
+        if ((flags & SERVER) == SERVER || !mark) {
             VKRequest vkRequest = new VKRequest(
                     "messages.getHistory",
-                    VKParameters.from("chat_id", chatId));
+                    VKParameters.from("chat_id", chatId, "count", COUNT, "offset", offset));
             vkRequest.executeWithListener(new VKRequest.VKRequestListener() {
                 @Override
                 public void onComplete(final VKResponse response) {
                     Log.d("VK", response.responseString);
-                    JSONObject jsonData = response.json.optJSONObject("response");
-                    JSONArray jsonItems = jsonData.optJSONArray("items");
-                    storeMessages(chatId, jsonItems);
-                    EVENT_BUS.post(new MessagesReadyEvent(getMessages(chatId)));
+                    storeMessages(chatId, response);
+
+                    int total = getTotalFromResponse(response);
+                    EVENT_BUS.post(new MessagesReadyEvent(getMessages(chatId), total));
                 }
 
                 @Override
@@ -176,13 +181,17 @@ public class DataManager {
         }
     }
 
+    private int getTotalFromResponse(final VKResponse response) {
+        return response.json.optJSONObject("response").optInt("count");
+    }
+
     public void requestUsersBatch(final Integer[] chatIds) {
         requestUsersBatch(chatIds, CACHE_SERVER);
     }
 
     public void requestUsersBatch(final Integer[] chatIds, final int flags) {
         ArrayList<Integer> ids = new ArrayList<>(Arrays.asList(chatIds));
-        if ((flags & CACHE) == 1) {
+        if ((flags & CACHE) == CACHE) {
             for (Integer id : chatIds) {
                 if (getMark(String.format("users:%s", id))) {
                     ids.remove(id);
@@ -190,7 +199,7 @@ public class DataManager {
             }
         }
 
-        if ((flags & SERVER) == 1 || ids.size() == chatIds.length) {
+        if ((flags & SERVER) == SERVER || ids.size() > 0) {
             VKRequest vkRequest = new VKRequest(
                     "messages.getChatUsers",
                     VKParameters.from("chat_ids", TextUtils.join(",", ids),
@@ -199,8 +208,7 @@ public class DataManager {
                 @Override
                 public void onComplete(final VKResponse response) {
                     Log.d("VK", response.responseString);
-                    JSONObject jsonChats = response.json.optJSONObject("response");
-                    storeUsers(chatIds, jsonChats);
+                    storeUsers(chatIds, response);
                     EVENT_BUS.post(new UsersReadyEvent());
                 }
 
@@ -213,37 +221,41 @@ public class DataManager {
         }
     }
 
-    private void storeUsers(final Integer[] chatIds, final JSONObject chats) {
+    private void storeUsers(final Integer[] chatIds, final VKResponse response) {
+        JSONObject jsonChats = response.json.optJSONObject("response");
         for (int id : chatIds) {
             String key = String.valueOf(id);
-            if (chats.has(key)) {
-                JSONArray users = chats.optJSONArray(key);
-                int usersCount = users.length();
+            if (jsonChats.has(key)) {
+                JSONArray jsonUsers = jsonChats.optJSONArray(key);
+                int usersCount = jsonUsers.length();
                 for (int i = 0; i < usersCount; i++) {
-                    JSONObject user = users.optJSONObject(i);
+                    JSONObject jsonUser = jsonUsers.optJSONObject(i);
                     ContentValues values = new ContentValues();
-                    values.put("user_id", user.optInt("id"));
-                    values.put("avatar", user.optString("photo"));
+                    values.put("user_id", jsonUser.optInt("id"));
+                    values.put("avatar", jsonUser.optString("photo"));
 
-                    write().insert("users", null, values);
+                    write().insert("jsonUsers", null, values);
                 }
-                setMark(String.format("users:%d", id));
+                setMark(String.format("jsonUsers:%d", id));
             }
         }
     }
 
-    private void storeMessages(final int chatId, final JSONArray messages) {
-        int length = messages.length();
+    private void storeMessages(final int chatId, final VKResponse response) {
+        JSONObject jsonData = response.json.optJSONObject("response");
+        JSONArray jsonItems = jsonData.optJSONArray("items");
+
+        int length = jsonItems.length();
         for (int i = 0; i < length; i++) {
-            JSONObject message = messages.optJSONObject(i);
-            if (!message.has("action")) {
+            JSONObject item = jsonItems.optJSONObject(i);
+            if (!item.has("action")) {
                 ContentValues values = new ContentValues();
-                values.put("message_id", message.optInt("id"));
-                values.put("chat_id", message.optInt("chat_id"));
-                values.put("user_id", message.optInt("user_id"));
-                values.put("date", message.optInt("date"));
-                values.put("body", message.optString("body"));
-                values.put("out", message.optInt("out"));
+                values.put("message_id", item.optInt("id"));
+                values.put("chat_id", item.optInt("chat_id"));
+                values.put("user_id", item.optInt("user_id"));
+                values.put("date", item.optInt("date"));
+                values.put("body", item.optString("body"));
+                values.put("out", item.optInt("out"));
 
                 write().insert("messages", null, values);
             }
@@ -252,16 +264,28 @@ public class DataManager {
     }
 
     public static class ChatsReadyEvent {
+        public final boolean fromCache;
         public final Cursor cursor;
 
-        public ChatsReadyEvent(final Cursor cursor) {this.cursor = cursor;}
+        protected ChatsReadyEvent(final Cursor cursor) {this(false, cursor);}
+
+        protected ChatsReadyEvent(final boolean fromCache, final Cursor cursor) {
+            this.fromCache = fromCache;
+            this.cursor = cursor;
+        }
     }
 
     public static class MessagesReadyEvent {
+        public final boolean fromCache;
         public final Cursor cursor;
+        public final int total;
 
-        public MessagesReadyEvent(final Cursor cursor) {
+        public MessagesReadyEvent(final Cursor cursor, final int total) {this(false, cursor);}
+
+        public MessagesReadyEvent(final boolean fromCache, final Cursor cursor) {
+            this.fromCache = fromCache;
             this.cursor = cursor;
+            this.total = 0;
         }
     }
 
