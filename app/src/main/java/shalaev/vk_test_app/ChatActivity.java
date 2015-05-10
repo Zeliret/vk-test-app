@@ -2,8 +2,6 @@ package shalaev.vk_test_app;
 
 import android.content.Context;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
 import android.support.v7.app.ActionBar;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,7 +10,6 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -20,9 +17,7 @@ import org.json.JSONObject;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Observable;
 
-import shalaev.vk_test_app.model.ChatManager;
 import shalaev.vk_test_app.utils.AvatarUtils;
 
 
@@ -30,11 +25,10 @@ public class ChatActivity extends AbstractActivity {
     public static final String KEY_CHAT = "chat";
     private ListView listView;
     private View progressView;
-    private ManagerFragment fragment;
-    private ChatManager chatManager;
     private JSONObject chat;
     private Bundle savedState;
     private MessagesAdapter adapter;
+    private DataManager dataManager = DataManager.getInstance();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,19 +36,6 @@ public class ChatActivity extends AbstractActivity {
         setContentView(R.layout.activity_chat);
         setupToolbar(R.id.toolbar);
         setupViews();
-        setupManagerFragment();
-    }
-
-    @Override
-    protected void setupManagerFragment() {
-        FragmentManager fm = getSupportFragmentManager();
-        fragment = (ManagerFragment) fm.findFragmentByTag(ManagerFragment.TAG);
-        if (null == fragment) {
-            fragment = ManagerFragment.newInstance(chat.optInt("chat_id"));
-            fm.beginTransaction()
-              .add(fragment, ManagerFragment.TAG)
-              .commit();
-        }
     }
 
     @Override
@@ -90,29 +71,18 @@ public class ChatActivity extends AbstractActivity {
 
     @Override
     protected void onAuthSuccess() {
-        chatManager = fragment.getManager();
-        chatManager.addObserver(ChatActivity.this);
-        chatManager.request(null == savedState);
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        chatManager.deleteObserver(this);
-    }
-
-    @Override
-    public void update(final Observable observable, final Object data) {
-        if (observable instanceof ChatManager) {
-            if (data instanceof ArrayList) {
-                @SuppressWarnings("unchecked")
-                ArrayList<JSONObject> items = (ArrayList<JSONObject>) data;
-                render(items);
-            } else if (data instanceof String) {
-                // TODO: error
-                Toast.makeText(this, (String) data, Toast.LENGTH_LONG).show();
-            }
+        int chatId = chat.optInt("chat_id");
+        ArrayList<JSONObject> messages = dataManager.getChatMessages(chatId);
+        if (null == messages) {
+            dataManager.requestMessages(chatId);
+        } else {
+            render(messages);
         }
+    }
+
+    @SuppressWarnings("unused")
+    public void onEventMainThread(final DataManager.MessagesEvent event) {
+        render(event.items);
     }
 
     private void render(final ArrayList<JSONObject> items) {
@@ -121,44 +91,6 @@ public class ChatActivity extends AbstractActivity {
         if (listView.getVisibility() != View.VISIBLE) {
             listView.setVisibility(View.VISIBLE);
             progressView.setVisibility(View.INVISIBLE);
-        }
-    }
-
-    public static final class ManagerFragment extends Fragment {
-        public static final String TAG = ManagerFragment.class.getName();
-        private static final String KEY_CHAT_ID = "chat_id";
-        public ChatManager manager;
-
-        public static ManagerFragment newInstance(final int chatId) {
-            Bundle args = new Bundle();
-            args.putInt(KEY_CHAT_ID, chatId);
-
-            ManagerFragment fragment = new ManagerFragment();
-            fragment.setArguments(args);
-            return fragment;
-        }
-
-        @Override
-        public void onCreate(final Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-            setRetainInstance(true);
-        }
-
-        @Override
-        public void onActivityCreated(final Bundle savedInstanceState) {
-            super.onActivityCreated(savedInstanceState);
-
-            int chatId = getArguments().getInt(KEY_CHAT_ID);
-            if (chatId <= 0) {
-                throw new IllegalStateException("Chat id must be positive above zero!");
-            }
-            if (null == manager) {
-                manager = new ChatManager(getActivity(), chatId);
-            }
-        }
-
-        public ChatManager getManager() {
-            return manager;
         }
     }
 
@@ -199,8 +131,12 @@ public class ChatActivity extends AbstractActivity {
             vh.body.setText(message.optString("body"));
             vh.time.setText(dateFormat.format(new Date(message.optLong("date") * 1000)));
 
-            if( null != vh.avatar ){
-                //AvatarUtils.loadChatAvatar(getContext(), message, vh.avatar);
+            if (null != vh.avatar) {
+                DataManager dataManager = DataManager.getInstance();
+                JSONObject user = dataManager.getUser(message.optInt("user_id"));
+                if (null != user) {
+                    AvatarUtils.loadAvatar(getContext(), user.optString("photo"), vh.avatar);
+                }
             }
 
             return view;

@@ -14,9 +14,10 @@ import com.vk.sdk.VKSdkListener;
 import com.vk.sdk.VKUIHelper;
 import com.vk.sdk.api.VKError;
 
-import java.util.Observer;
+import de.greenrobot.event.EventBus;
 
-public abstract class AbstractActivity extends AppCompatActivity implements Observer {
+public abstract class AbstractActivity extends AppCompatActivity {
+    public static final EventBus EVENT_BUS = EventBus.getDefault();
     private static boolean authProgress = false;
 
     @Override
@@ -28,10 +29,15 @@ public abstract class AbstractActivity extends AppCompatActivity implements Obse
     @Override
     protected void onStart() {
         super.onStart();
+        EVENT_BUS.register(this);
         initAuthentication();
     }
 
-    protected abstract void setupManagerFragment();
+    @Override
+    protected void onStop() {
+        super.onStop();
+        EVENT_BUS.unregister(this);
+    }
 
     protected abstract void setupViews();
 

@@ -3,8 +3,6 @@ package shalaev.vk_test_app;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,16 +11,13 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import org.json.JSONObject;
 
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Observable;
 
-import shalaev.vk_test_app.model.ChatListManager;
 import shalaev.vk_test_app.utils.AvatarUtils;
 
 
@@ -30,9 +25,8 @@ public class ChatListActivity extends AbstractActivity {
     private ListView listView;
     private View progressView;
     private ChatListAdapter adapter;
-    private ChatListManager chatListManager;
     private Bundle savedState;
-    private ManagerFragment fragment;
+    private DataManager dataManager = DataManager.getInstance();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,19 +34,6 @@ public class ChatListActivity extends AbstractActivity {
         setContentView(R.layout.activity_chat_list);
         setupToolbar(R.id.toolbar);
         setupViews();
-        setupManagerFragment();
-    }
-
-    @Override
-    protected void setupManagerFragment() {
-        FragmentManager fm = getSupportFragmentManager();
-        fragment = (ManagerFragment) fm.findFragmentByTag(ManagerFragment.TAG);
-        if (null == fragment) {
-            fragment = new ManagerFragment();
-            fm.beginTransaction()
-              .add(fragment, ManagerFragment.TAG)
-              .commit();
-        }
     }
 
     @Override
@@ -72,29 +53,27 @@ public class ChatListActivity extends AbstractActivity {
 
     @Override
     protected void onAuthSuccess() {
-        chatListManager = fragment.getManager();
-        chatListManager.addObserver(ChatListActivity.this);
-        chatListManager.request(null == savedState);
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        chatListManager.deleteObserver(this);
-    }
-
-    @Override
-    public void update(final Observable observable, final Object data) {
-        if (observable instanceof ChatListManager) {
-            if (data instanceof ArrayList) {
-                @SuppressWarnings("unchecked")
-                ArrayList<JSONObject> items = (ArrayList<JSONObject>) data;
-                render(items);
-            } else if (data instanceof String) {
-                // TODO: error
-                Toast.makeText(this, (String) data, Toast.LENGTH_LONG).show();
-            }
+        ArrayList<JSONObject> chats = dataManager.getChats();
+        if (null == chats) {
+            dataManager.requestChatList();
+        } else {
+            requestUsers(chats);
+            render(chats);
         }
+    }
+
+    @SuppressWarnings("unused")
+    public void onEventMainThread(final DataManager.ChatListEvent event) {
+        requestUsers(event.items);
+        render(event.items);
+    }
+
+    private void requestUsers(final ArrayList<JSONObject> items) {
+        ArrayList<Integer> ids = new ArrayList<>();
+        for (JSONObject item : items) {
+            ids.add(item.optInt("chat_id"));
+        }
+        dataManager.requestUsers(ids);
     }
 
     private void render(final ArrayList<JSONObject> items) {
@@ -103,30 +82,6 @@ public class ChatListActivity extends AbstractActivity {
         if (listView.getVisibility() != View.VISIBLE) {
             listView.setVisibility(View.VISIBLE);
             progressView.setVisibility(View.INVISIBLE);
-        }
-    }
-
-    public static final class ManagerFragment extends Fragment {
-        public static final String TAG = ManagerFragment.class.getName();
-        private ChatListManager manager;
-
-        @Override
-        public void onCreate(final Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-            setRetainInstance(true);
-        }
-
-        @Override
-        public void onActivityCreated(final Bundle savedInstanceState) {
-            super.onActivityCreated(savedInstanceState);
-
-            if (null == manager) {
-                manager = new ChatListManager(getActivity());
-            }
-        }
-
-        public ChatListManager getManager() {
-            return manager;
         }
     }
 
@@ -161,7 +116,7 @@ public class ChatListActivity extends AbstractActivity {
             vh.message.setText(chat.optString("body"));
             vh.time.setText(dateFormat.format(new Date(chat.optLong("date") * 1000)));
 
-            AvatarUtils.loadChatAvatar(getContext(), chat, vh.avatar);
+            AvatarUtils.loadAvatar(getContext(), chat.optString("photo_200"), vh.avatar);
 
             return view;
         }
