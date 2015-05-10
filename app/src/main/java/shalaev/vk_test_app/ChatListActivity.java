@@ -1,38 +1,31 @@
 package shalaev.vk_test_app;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
+import android.support.v4.widget.CursorAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
-
-import org.json.JSONObject;
 
 import java.text.DateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.Observable;
 
-import shalaev.vk_test_app.model.ChatListManager;
 import shalaev.vk_test_app.utils.AvatarUtils;
 
 
 public class ChatListActivity extends AbstractActivity {
     private ListView listView;
     private View progressView;
-    private ChatListAdapter adapter;
-    private ChatListManager chatListManager;
     private Bundle savedState;
-    private ManagerFragment fragment;
+    private ChatListAdapter adapter;
+    private DataManager dataManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,135 +33,88 @@ public class ChatListActivity extends AbstractActivity {
         setContentView(R.layout.activity_chat_list);
         setupToolbar(R.id.toolbar);
         setupViews();
-        setupManagerFragment();
-    }
 
-    @Override
-    protected void setupManagerFragment() {
-        FragmentManager fm = getSupportFragmentManager();
-        fragment = (ManagerFragment) fm.findFragmentByTag(ManagerFragment.TAG);
-        if (null == fragment) {
-            fragment = new ManagerFragment();
-            fm.beginTransaction()
-              .add(fragment, ManagerFragment.TAG)
-              .commit();
-        }
+        dataManager = DataManager.getInstance(this);
     }
 
     @Override
     protected void setupViews() {
         listView = (ListView) findViewById(R.id.chat_list);
-        listView.setAdapter(adapter = new ChatListAdapter(this));
         listView.setOnItemClickListener(new ListItemClickListener());
 
         progressView = findViewById(R.id.chat_list_progress);
     }
 
-    private void openChat(final JSONObject chatItem) {
+    private void openChat(final int chatId) {
         Intent intent = new Intent(this, ChatActivity.class)
-                .putExtra(ChatActivity.KEY_CHAT, chatItem.toString());
+                .putExtra(ChatActivity.KEY_CHAT_ID, chatId);
         startActivity(intent);
     }
 
     @Override
     protected void onAuthSuccess() {
-        chatListManager = fragment.getManager();
-        chatListManager.addObserver(ChatListActivity.this);
-        chatListManager.request(null == savedState);
+        dataManager.requestChats(DataManager.CACHE);
     }
 
-    @Override
-    protected void onStop() {
-        super.onStop();
-        chatListManager.deleteObserver(this);
+    @SuppressWarnings("unused")
+    public void onEventMainThread(final DataManager.ChatsReadyEvent event) {
+        requestUsers(event.cursor);
+        render(event.cursor);
     }
 
-    @Override
-    public void update(final Observable observable, final Object data) {
-        if (observable instanceof ChatListManager) {
-            if (data instanceof ArrayList) {
-                @SuppressWarnings("unchecked")
-                ArrayList<JSONObject> items = (ArrayList<JSONObject>) data;
-                render(items);
-            } else if (data instanceof String) {
-                // TODO: error
-                Toast.makeText(this, (String) data, Toast.LENGTH_LONG).show();
-            }
+    private void requestUsers(final Cursor c) {
+        Integer[] ids = new Integer[c.getCount()];
+        while (c.moveToNext()) {
+            ids[c.getPosition()] = c.getInt(c.getColumnIndex("chat_id"));
         }
+        dataManager.requestUsersBatch(ids);
     }
 
-    private void render(final ArrayList<JSONObject> items) {
-        adapter.clear();
-        adapter.addAll(items);
+    private void render(final Cursor cursor) {
+        if (null == adapter) {
+            adapter = new ChatListAdapter(this, cursor);
+            listView.setAdapter(adapter);
+        } else {
+            adapter.swapCursor(cursor);
+        }
+
         if (listView.getVisibility() != View.VISIBLE) {
             listView.setVisibility(View.VISIBLE);
             progressView.setVisibility(View.INVISIBLE);
         }
     }
 
-    public static final class ManagerFragment extends Fragment {
-        public static final String TAG = ManagerFragment.class.getName();
-        private ChatListManager manager;
-
-        @Override
-        public void onCreate(final Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-            setRetainInstance(true);
-        }
-
-        @Override
-        public void onActivityCreated(final Bundle savedInstanceState) {
-            super.onActivityCreated(savedInstanceState);
-
-            if (null == manager) {
-                manager = new ChatListManager(getActivity());
-            }
-        }
-
-        public ChatListManager getManager() {
-            return manager;
-        }
-    }
-
-    public static final class ChatListAdapter extends ArrayAdapter<JSONObject> {
+    public static final class ChatListAdapter extends CursorAdapter {
         private static final int RESOURCE_ID = R.layout.list_item_chat;
-        private final LayoutInflater inflater;
         private final DateFormat dateFormat = DateFormat.getTimeInstance(DateFormat.SHORT);
+        private final LayoutInflater inflater;
+        private final Activity activity;
 
-        public ChatListAdapter(final Context context) {
-            super(context, RESOURCE_ID, new ArrayList<JSONObject>());
-            inflater = LayoutInflater.from(context);
+        public ChatListAdapter(final Activity activity, final Cursor c) {
+            super(activity, c, 0);
+            this.activity = activity;
+            inflater = LayoutInflater.from(activity);
         }
 
         @Override
-        public long getItemId(final int position) {
-            return getItem(position).optInt("chat_id");
-        }
-
-        @Override
-        public View getView(final int position, final View convertView, final ViewGroup parent) {
-            View view = convertView;
-            ViewHolder vh;
-            if (null == view) {
-                view = inflater.inflate(RESOURCE_ID, parent, false);
-                view.setTag(vh = new ViewHolder(view));
-            } else {
-                vh = (ViewHolder) view.getTag();
-            }
-
-            JSONObject chat = getItem(position);
-            vh.title.setText(chat.optString("title"));
-            vh.message.setText(chat.optString("body"));
-            vh.time.setText(dateFormat.format(new Date(chat.optLong("date") * 1000)));
-
-            AvatarUtils.loadChatAvatar(getContext(), chat, vh.avatar);
+        public View newView(final Context context, final Cursor cursor, final ViewGroup parent) {
+            View view = inflater.inflate(RESOURCE_ID, parent, false);
+            view.setTag(new ViewHolder(view));
 
             return view;
         }
 
         @Override
-        public boolean hasStableIds() {
-            return true;
+        public void bindView(final View view, final Context context, final Cursor c) {
+            ViewHolder vh = (ViewHolder) view.getTag();
+            vh.title.setText(c.getString(c.getColumnIndex("title")));
+            vh.message.setText(c.getString(c.getColumnIndex("body")));
+
+            long date = c.getInt(c.getColumnIndex("date"));
+            vh.time.setText(dateFormat.format(new Date(date * 1000)));
+
+            String avatarUrl = c.getString(c.getColumnIndex("avatar"));
+            AvatarUtils.loadAvatar(activity, avatarUrl, vh.avatar);
         }
 
         private class ViewHolder {
@@ -190,8 +136,8 @@ public class ChatListActivity extends AbstractActivity {
         @Override
         public void onItemClick(final AdapterView<?> parent, final View view, final int position,
                                 final long id) {
-            JSONObject item = adapter.getItem(position);
-            openChat(item);
+            Cursor c = (Cursor) adapter.getItem(position);
+            openChat(c.getInt(c.getColumnIndex("chat_id")));
         }
     }
 }

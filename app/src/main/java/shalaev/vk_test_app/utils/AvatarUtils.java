@@ -1,20 +1,21 @@
 package shalaev.vk_test_app.utils;
 
+import android.app.Activity;
 import android.content.Context;
 import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
 
-import org.json.JSONObject;
+import shalaev.vk_test_app.R;
 
 public final class AvatarUtils {
-    public static void loadChatAvatar(final Context context, final JSONObject chat,
-                                      final ImageView imageView) {
-        if (chat.has("photo_200")) {
-            Glide.with(context)
-                 .load(chat.optString("photo_200"))
-                 .transform(new CircleTransform(context))
-                 .into(imageView);
-        }
+    public static void loadAvatar(final Activity activity, final String url,
+                                  final ImageView imageView) {
+        Glide.with(activity)
+             .load(url)
+             .transform(new CircleTransform(activity))
+             .error(R.drawable.avatar_dummy)
+             .crossFade()
+             .into(imageView);
     }
 }
