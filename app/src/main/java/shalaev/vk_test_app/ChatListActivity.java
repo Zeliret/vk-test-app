@@ -54,7 +54,7 @@ public class ChatListActivity extends AbstractActivity {
 
     @Override
     protected void onAuthSuccess() {
-        dataManager.requestChats(DataManager.CACHE);
+        dataManager.requestChats();
     }
 
     @SuppressWarnings("unused")

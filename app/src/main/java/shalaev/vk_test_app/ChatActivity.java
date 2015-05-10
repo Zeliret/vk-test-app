@@ -21,8 +21,8 @@ import shalaev.vk_test_app.utils.AvatarUtils;
 
 
 public class ChatActivity extends AbstractActivity {
-    private static final int LOAD_MODE_OFFSET = 10;
     public static final String KEY_CHAT_ID = "chat_id";
+    private static final int LOAD_MODE_OFFSET = 10;
     private ListView listView;
     private View progressView;
     private Bundle savedState;
@@ -31,6 +31,8 @@ public class ChatActivity extends AbstractActivity {
     private DataManager dataManager;
     private boolean scrollReady = false;
     private int total = 0;
+    private TextView titleView;
+    private TextView subtitleView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,30 +49,33 @@ public class ChatActivity extends AbstractActivity {
         listView = (ListView) findViewById(R.id.messages_list);
         listView.setAdapter(adapter = new MessagesAdapter(this, null));
         listView.setOnScrollListener(new MessagesScrollListener());
-
         progressView = findViewById(R.id.messages_list_progress);
+        titleView = (TextView) findViewById(R.id.toolbar_title);
+        subtitleView = (TextView) findViewById(R.id.toolbar_subtitle);
 
         chatId = getIntent().getIntExtra(KEY_CHAT_ID, 0);
-        Cursor c = DataManager.getInstance(this).getChat(chatId);
-        if (null != c) {
-            TextView titleView = (TextView) findViewById(R.id.toolbar_title);
-            titleView.setText(c.getString(c.getColumnIndex("title")));
-
-            int usersCount = c.getInt(c.getColumnIndex("users_count"));
-            String subtitle = getResources().getQuantityString(R.plurals.subtitle_chat,
-                                                               usersCount,
-                                                               usersCount);
-            TextView subtitleView = (TextView) findViewById(R.id.toolbar_subtitle);
-            subtitleView.setText(subtitle);
-        } else {
-            throw new RuntimeException("Invalid chat id, check extra params!");
-        }
     }
 
     @SuppressWarnings("unused")
     public void onEventMainThread(final DataManager.MessagesReadyEvent event) {
         render(event.cursor);
         total = event.total;
+    }
+
+    @SuppressWarnings("unused")
+    public void onEventMainThread(final DataManager.ChatReadyEvent event) {
+        updateTitles(event.cursor);
+    }
+
+    private void updateTitles(final Cursor c) {
+        titleView.setText(c.getString(c.getColumnIndex("title")));
+
+        int usersCount = c.getInt(c.getColumnIndex("users_count"));
+        String subtitle = getResources().getQuantityString(R.plurals.subtitle_chat,
+                                                           usersCount,
+                                                           usersCount);
+        subtitleView.setText(subtitle);
+        c.close();
     }
 
     @SuppressWarnings("unused")
@@ -89,6 +94,7 @@ public class ChatActivity extends AbstractActivity {
 
     @Override
     protected void onAuthSuccess() {
+        dataManager.requestChat(chatId);
         dataManager.requestMessages(chatId);
     }
 
@@ -199,7 +205,7 @@ public class ChatActivity extends AbstractActivity {
                 if (null != c) {
                     int pos = c.getPosition();
                     int count = c.getCount();
-                    if (pos <= LOAD_MODE_OFFSET && total >= 0 && total > count) {
+                    if (pos == count && count < total) {
                         scrollReady = false;
                         dataManager.requestMessages(chatId, c.getCount(), DataManager.SERVER);
                     }
