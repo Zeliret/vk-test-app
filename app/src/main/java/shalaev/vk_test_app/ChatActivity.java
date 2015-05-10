@@ -3,7 +3,6 @@ package shalaev.vk_test_app;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,6 +26,7 @@ public class ChatActivity extends AbstractActivity {
     public static final String KEY_CHAT = "chat";
     private static final int THRESHOLD = 5;
     private ListView listView;
+    private View headerView;
     private View progressView;
     private JSONObject chat;
     private Bundle savedState;
@@ -34,6 +34,7 @@ public class ChatActivity extends AbstractActivity {
     private DataManager dataManager = DataManager.getInstance();
     private int chatId;
     private boolean scrollReady = false;
+    private View headerProgressView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,7 +46,10 @@ public class ChatActivity extends AbstractActivity {
 
     @Override
     protected void setupViews() {
+        View headerView = getLayoutInflater().inflate(R.layout.list_item_msg_progress, null);
+        headerProgressView = headerView.findViewById(R.id.header_progress);
         listView = (ListView) findViewById(R.id.messages_list);
+        listView.addHeaderView(headerView, null, false);
         listView.setAdapter(adapter = new MessagesAdapter(this));
         listView.setOnScrollListener(new MessagesScrollListener());
 
@@ -98,19 +102,25 @@ public class ChatActivity extends AbstractActivity {
     }
 
     private void renderAppend(final ArrayList<JSONObject> items) {
-        int firstVisibleItem = listView.getFirstVisiblePosition();
-        int oldCount = adapter.getCount();
-        View view = listView.getChildAt(0);
-        int pos = (view == null ? 0 :  view.getBottom());
+        if (items.size() > 0) {
+            int firstVisibleItem = listView.getFirstVisiblePosition();
+            int oldCount = adapter.getCount();
+            View view = listView.getChildAt(0);
+            int pos = (view == null ? 0 : view.getBottom());
 
-        adapter.addAll(items);
-        listView.setSelectionFromTop(firstVisibleItem + adapter.getCount() - oldCount + 1, pos);
-        scrollReady = true;
+            adapter.addAll(items);
+            listView.setSelectionFromTop(firstVisibleItem + adapter.getCount() - oldCount + 1, pos);
+            scrollReady = true;
+        }
+        headerProgressView.setVisibility(View.GONE);
     }
 
     private void render(final ArrayList<JSONObject> items) {
         adapter.clear();
         adapter.addAll(items);
+        if (adapter.getCount() > 0) {
+            listView.setSelection(adapter.getCount() - 1);
+        }
         if (listView.getVisibility() != View.VISIBLE) {
             listView.setVisibility(View.VISIBLE);
             progressView.setVisibility(View.INVISIBLE);
@@ -218,18 +228,17 @@ public class ChatActivity extends AbstractActivity {
 
     private class MessagesScrollListener implements AbsListView.OnScrollListener {
         @Override
-        public void onScrollStateChanged(final AbsListView view, final int scrollState) {
-
-        }
+        public void onScrollStateChanged(final AbsListView view, final int scrollState) {}
 
         @Override
         public void onScroll(final AbsListView view, final int firstVisibleItem,
                              final int visibleItemCount,
                              final int totalItemCount) {
-            if (scrollReady && firstVisibleItem < THRESHOLD) {
+            if (scrollReady && firstVisibleItem > 0 && firstVisibleItem < THRESHOLD) {
                 scrollReady = false;
 
                 dataManager.requestMessagesExtra(chatId, totalItemCount);
+                headerProgressView.setVisibility(View.VISIBLE);
             }
         }
     }
