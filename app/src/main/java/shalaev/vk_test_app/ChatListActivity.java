@@ -3,6 +3,7 @@ package shalaev.vk_test_app;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Date;
 
 import shalaev.vk_test_app.utils.ImageUtils;
+import shalaev.vk_test_app.utils.ImageUtils.Collage;
 
 
 public class ChatListActivity extends AbstractActivity {
@@ -68,6 +70,11 @@ public class ChatListActivity extends AbstractActivity {
         render(event.items);
     }
 
+    @SuppressWarnings("unused")
+    public void onEventMainThread(final DataManager.UsersBulkEvent event) {
+       adapter.notifyDataSetChanged();
+    }
+
     private void requestUsers(final ArrayList<JSONObject> items) {
         ArrayList<Integer> ids = new ArrayList<>();
         for (JSONObject item : items) {
@@ -89,6 +96,7 @@ public class ChatListActivity extends AbstractActivity {
         private static final int RESOURCE_ID = R.layout.list_item_chat;
         private final LayoutInflater inflater;
         private final DateFormat dateFormat = DateFormat.getTimeInstance(DateFormat.SHORT);
+        private final DataManager dataManager = DataManager.getInstance();
 
         public ChatListAdapter(final Context context) {
             super(context, RESOURCE_ID, new ArrayList<JSONObject>());
@@ -116,9 +124,21 @@ public class ChatListActivity extends AbstractActivity {
             vh.message.setText(chat.optString("body"));
             vh.time.setText(dateFormat.format(new Date(chat.optLong("date") * 1000)));
 
-            ImageUtils.loadAvatar(getContext(), chat.optString("photo_200"), vh.avatar);
+            loadAvatar(chat, vh.avatar);
 
             return view;
+        }
+
+        private void loadAvatar(final JSONObject chat, final ImageView imageView) {
+            String photo = chat.optString("photo_200");
+            if (!TextUtils.isEmpty(photo)) {
+                ImageUtils.loadSimpleAvatar(getContext(), photo, imageView);
+            } else {
+                Collage collage = dataManager.getCollage(chat.optInt("chat_id"));
+                if (null != collage) {
+                    ImageUtils.loadCollageAvatar(getContext(), collage, imageView);
+                }
+            }
         }
 
         @Override

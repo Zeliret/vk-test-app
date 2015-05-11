@@ -33,15 +33,13 @@ public class ChatActivity extends AbstractActivity {
     public static final String KEY_CHAT = "chat";
     private static final int THRESHOLD = 5;
     private ListView listView;
-    private View headerView;
     private View progressView;
-    private JSONObject chat;
+    private View headerProgressView;
     private Bundle savedState;
     private MessagesAdapter adapter;
     private DataManager dataManager = DataManager.getInstance();
     private int chatId;
     private boolean scrollReady = false;
-    private View headerProgressView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,7 +61,7 @@ public class ChatActivity extends AbstractActivity {
         progressView = findViewById(R.id.messages_list_progress);
 
         try {
-            chat = new JSONObject(getIntent().getStringExtra(KEY_CHAT));
+            JSONObject chat = new JSONObject(getIntent().getStringExtra(KEY_CHAT));
             chatId = chat.optInt("chat_id");
 
             TextView titleView = (TextView) findViewById(R.id.toolbar_title);
@@ -100,12 +98,11 @@ public class ChatActivity extends AbstractActivity {
 
     @SuppressWarnings("unused")
     public void onEventMainThread(final DataManager.MessagesEvent event) {
-        render(event.items);
-    }
-
-    @SuppressWarnings("unused")
-    public void onEventMainThread(final DataManager.MessagesExtraEvent event) {
-        renderAppend(event.items);
+        if (event.offset > 0) {
+            renderAppend(event.items);
+        } else {
+            render(event.items);
+        }
     }
 
     private void renderAppend(final ArrayList<JSONObject> items) {
@@ -133,6 +130,7 @@ public class ChatActivity extends AbstractActivity {
             progressView.setVisibility(View.INVISIBLE);
         }
         scrollReady = true;
+        dataManager.requestLongPoll(chatId);
     }
 
     public static final class MessagesAdapter extends ArrayAdapter<JSONObject> {
@@ -198,13 +196,16 @@ public class ChatActivity extends AbstractActivity {
                 DataManager dataManager = DataManager.getInstance();
                 JSONObject user = dataManager.getUser(message.optInt("user_id"));
                 if (null != user) {
-                    ImageUtils.loadAvatar(getContext(), user.optString("photo"), imageView);
+                    ImageUtils.loadSimpleAvatar(getContext(), user.optString("photo"), imageView);
                 }
             }
         }
 
         private void loadAttachments(final JSONObject message, final ViewGroup viewGroup) {
-            viewGroup.removeAllViews();
+            int viewCount = viewGroup.getChildCount();
+            for (int i = 0; i < viewCount; i++) {
+                viewGroup.removeViewAt(i);
+            }
 
             if (message.has("attachments")) {
                 int id = message.optInt("id");
@@ -229,9 +230,10 @@ public class ChatActivity extends AbstractActivity {
                             ImageView imageView = new ImageView(getContext());
                             imageView.setAdjustViewBounds(true);
                             imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-                            viewGroup.addView(imageView, new ViewGroup.LayoutParams(
+                            imageView.setLayoutParams(new ViewGroup.LayoutParams(
                                     ViewGroup.LayoutParams.WRAP_CONTENT,
                                     ViewGroup.LayoutParams.WRAP_CONTENT));
+                            viewGroup.addView(imageView);
                             imageViews.add(imageView);
                             ImageUtils.loadAttachment(getContext(), url, imageView);
                         }
@@ -310,7 +312,7 @@ public class ChatActivity extends AbstractActivity {
             if (scrollReady && firstVisibleItem > 0 && firstVisibleItem < THRESHOLD) {
                 scrollReady = false;
 
-                dataManager.requestMessagesExtra(chatId, totalItemCount);
+                dataManager.requestMessages(chatId, totalItemCount);
                 headerProgressView.setVisibility(View.VISIBLE);
             }
         }
