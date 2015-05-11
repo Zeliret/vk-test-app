@@ -2,6 +2,7 @@
                 xmlns:tools="http://schemas.android.com/tools"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:background="@drawable/bg"
                 tools:context="shalaev.vk_test_app.ChatActivity">
 
     <android.support.v7.widget.Toolbar
@@ -19,7 +20,7 @@
                 android:id="@+id/toolbar_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.AppCompat.Widget.ActionBar.Title"
+                android:textAppearance="@style/TextAppearance.Custom.Widget.ActionBar.Title"
                 tools:text="Название беседы"/>
 
             <TextView
@@ -27,7 +28,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_below="@id/toolbar_title"
-                android:textAppearance="@style/TextAppearance.AppCompat.Widget.ActionBar.Subtitle"
+                android:textAppearance="@style/TextAppearance.Custom.Widget.ActionBar.Subtitle"
                 tools:text="5 участников"/>
         </RelativeLayout>
     </android.support.v7.widget.Toolbar>
@@ -38,6 +39,7 @@
         android:layout_height="match_parent"
         android:layout_below="@id/toolbar"
         android:divider="@null"
+        android:listSelector="@null"
         android:smoothScrollbar="true"
         android:stackFromBottom="true"
         android:visibility="invisible"/>

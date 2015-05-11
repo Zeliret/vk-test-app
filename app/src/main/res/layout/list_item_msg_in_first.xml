@@ -25,6 +25,7 @@
             android:layout_marginLeft="@dimen/content_padding_narrow"
             android:paddingBottom="@dimen/content_padding_narrow"
             android:singleLine="true"
+            android:textAppearance="@style/TextAppearance.Custom.Message.Time"
             tools:text="23:17"/>
 
         <TextView
@@ -37,6 +38,7 @@
             android:paddingLeft="@dimen/content_padding"
             android:paddingRight="@dimen/content_padding_narrow"
             android:paddingTop="@dimen/content_padding_narrow"
+            android:textAppearance="@style/TextAppearance.Custom.Message"
             tools:text="Ссообщение Ссообщение Ссообщение Ссообщение Ссообщение Ссообщение "/>
     </RelativeLayout>
 </LinearLayout>

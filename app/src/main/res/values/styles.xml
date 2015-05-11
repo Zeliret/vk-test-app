@@ -13,7 +13,8 @@
     </style>
 
 
-    <style name="TextAppearance.Custom.Chat" parent="TextAppearance.AppCompat.Medium" />
+    <style name="TextAppearance.Custom.Chat" parent="TextAppearance.AppCompat.Medium"/>
+
     <style name="TextAppearance.Custom.Chat.Title">
         <item name="android:textSize">@dimen/ts_chat_title</item>
         <item name="android:textColor">?android:textColorPrimary</item>
@@ -27,6 +28,32 @@
     <style name="TextAppearance.Custom.Chat.Time">
         <item name="android:textSize">@dimen/ts_chat_time</item>
         <item name="android:textColor">?android:textColorSecondary</item>
+    </style>
+
+    <style name="TextAppearance.Custom.Message" parent="TextAppearance.AppCompat.Medium">
+        <item name="android:textColor">?android:textColorPrimary</item>
+        <item name="android:textSize">@dimen/ts_message</item>
+    </style>
+
+    <style name="TextAppearance.Custom.Message.Out">
+        <item name="android:textColor">?android:textColorPrimaryInverse</item>
+    </style>
+
+    <style name="TextAppearance.Custom.Message.Time">
+        <item name="android:textSize">@dimen/ts_time</item>
+        <item name="android:textColor">?android:textColorSecondaryInverse</item>
+    </style>
+
+    <style name="TextAppearance.Custom.Widget.ActionBar.Title" parent="Base.TextAppearance.Custom.Widget.ActionBar.Title"/>
+
+    <style name="TextAppearance.Custom.Widget.ActionBar.Subtitle" parent="Base.TextAppearance.Custom.Widget.ActionBar.Subtitle"/>
+
+    <style name="Base.TextAppearance.Custom.Widget.ActionBar.Title" parent="TextAppearance.AppCompat.Widget.ActionBar.Title">
+        <item name="android:textSize">@dimen/ts_actionbar_title</item>
+    </style>
+
+    <style name="Base.TextAppearance.Custom.Widget.ActionBar.Subtitle" parent="TextAppearance.AppCompat.Widget.ActionBar.Subtitle">
+        <item name="android:textSize">@dimen/ts_actionbar_subtitle</item>
     </style>
 
 </resources>

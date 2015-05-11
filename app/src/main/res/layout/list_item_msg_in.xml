@@ -5,6 +5,7 @@
                 android:layout_height="wrap_content"
                 android:gravity="left"
                 android:padding="@dimen/content_padding_narrow">
+
     <TextView
         android:id="@+id/message_time"
         android:layout_width="wrap_content"
@@ -15,6 +16,7 @@
         android:layout_marginLeft="@dimen/content_padding_narrow"
         android:paddingBottom="@dimen/content_padding_narrow"
         android:singleLine="true"
+        android:textAppearance="@style/TextAppearance.Custom.Message.Time"
         tools:text="23:17"/>
 
     <TextView
@@ -25,6 +27,7 @@
         android:layout_toLeftOf="@id/message_time"
         android:background="@drawable/msg_in"
         android:padding="@dimen/content_padding_narrow"
+        android:textAppearance="@style/TextAppearance.Custom.Message"
         tools:text="Ссообщение Ссообщение Ссообщение Ссообщение Ссообщение Ссообщение Ссообщение"/>
 
 </RelativeLayout>

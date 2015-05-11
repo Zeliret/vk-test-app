@@ -14,6 +14,7 @@
         android:layout_marginRight="@dimen/content_padding_narrow"
         android:paddingBottom="@dimen/content_padding_narrow"
         android:singleLine="true"
+        android:textAppearance="@style/TextAppearance.Custom.Message.Time"
         tools:text="23:17"/>
 
     <TextView
@@ -21,10 +22,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@drawable/msg_out"
-        android:paddingTop="@dimen/content_padding_narrow"
         android:paddingBottom="@dimen/content_padding_narrow"
         android:paddingLeft="@dimen/content_padding_narrow"
         android:paddingRight="@dimen/content_padding"
+        android:paddingTop="@dimen/content_padding_narrow"
+        android:textAppearance="@style/TextAppearance.Custom.Message.Out"
         tools:text="Ссообщение Ссообщение Ссообщение Ссообщение Ссообщение Ссообщение Ссообщение"/>
 
 </LinearLayout>
