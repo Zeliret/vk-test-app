@@ -6,7 +6,7 @@
     <dimen name="ts_actionbar_subtitle">13sp</dimen>
 
     <dimen name="chat_avatar_size">64dp</dimen>
-    <dimen name="message_avatar_size">36dp</dimen>
+    <dimen name="message_avatar_size">32dp</dimen>
     <dimen name="message_avatar_padding">41dp</dimen>
 
     <dimen name="ts_chat_title">16sp</dimen>

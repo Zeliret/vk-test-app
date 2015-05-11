@@ -196,7 +196,7 @@ public class ChatActivity extends AbstractActivity {
                 DataManager dataManager = DataManager.getInstance();
                 JSONObject user = dataManager.getUser(message.optInt("user_id"));
                 if (null != user) {
-                    ImageUtils.loadSimpleAvatar(getContext(), user.optString("photo"), imageView);
+                    ImageUtils.loadSimpleAvatar(getContext(), user.optString("photo_200"), imageView);
                 }
             }
         }

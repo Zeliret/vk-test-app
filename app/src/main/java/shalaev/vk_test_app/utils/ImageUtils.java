@@ -2,6 +2,7 @@ package shalaev.vk_test_app.utils;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.text.TextUtils;
 import android.util.Log;
@@ -10,7 +11,9 @@ import android.widget.ImageView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.Priority;
 import com.bumptech.glide.load.data.DataFetcher;
+import com.bumptech.glide.load.data.HttpUrlFetcher;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.load.model.GlideUrl;
 import com.bumptech.glide.load.model.ModelLoader;
 
 import java.io.ByteArrayInputStream;
@@ -22,6 +25,8 @@ import java.util.List;
 import shalaev.vk_test_app.R;
 
 public final class ImageUtils {
+    private static CollageModelLoader loader;
+
     public static void loadSimpleAvatar(final Context context, final String url,
                                         final ImageView imageView) {
         Glide.with(context)
@@ -34,8 +39,12 @@ public final class ImageUtils {
 
     public static void loadCollageAvatar(final Context context, final Collage collage,
                                          final ImageView imageView) {
+        if (null == loader) {
+            loader = new CollageModelLoader(context);
+        }
+
         Glide.with(context)
-             .using(new CollageModelLoader(context), InputStream.class)
+             .using(loader, InputStream.class)
              .load(collage)
              .as(Bitmap.class)
              .placeholder(R.drawable.avatar_dummy)
@@ -85,7 +94,7 @@ public final class ImageUtils {
         private final Collage collage;
         private final int width;
         private final int height;
-        private final ArrayList<Bitmap> toRecycle = new ArrayList<>();
+        private final Bitmap.Config config = Bitmap.Config.RGB_565;
 
         public CollageFetcher(final Context context, final Collage collage, final int width,
                               final int height) {
@@ -102,19 +111,16 @@ public final class ImageUtils {
             ArrayList<Bitmap> bitmaps = new ArrayList<>();
             List<String> urls = collage.getUrls();
             for (String url : urls) {
-                Bitmap bitmap = Glide.with(context)
-                                     .load(url)
-                                     .asBitmap()
-                                     .diskCacheStrategy(DiskCacheStrategy.ALL)
-                                     .into(width, height)
-                                     .get();
+                HttpUrlFetcher fetcher = new HttpUrlFetcher(new GlideUrl(url));
+                InputStream inputStream = fetcher.loadData(priority);
+                Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
                 bitmaps.add(bitmap);
-                toRecycle.add(bitmap);
-            }
+                fetcher.cleanup();
+        }
 
-            Bitmap.Config config = Bitmap.Config.RGB_565;
-            Bitmap bitmap = Bitmap.createBitmap(width, height, config);
-            Canvas canvas = new Canvas(bitmap);
+            Bitmap resultBitmap = Bitmap.createBitmap(width, height, config);
+            Canvas canvas = new Canvas(resultBitmap);
+            Bitmap b;
             switch (bitmaps.size()) {
                 case 1:
                     Log.d("COLLAGE", "switch 1");
@@ -125,45 +131,41 @@ public final class ImageUtils {
 
                 case 3:
                     Log.d("COLLAGE", "switch 3");
-                    Bitmap first = bitmaps.get(0);
-                    canvas.drawBitmap(first, -width / 4, 0, null);
-                    Bitmap second = Bitmap.createScaledBitmap(bitmaps.get(1),
-                                                              width / 2, height / 2,
-                                                              false);
-                    canvas.drawBitmap(second, width / 2, 0, null);
-                    Bitmap third = Bitmap.createScaledBitmap(bitmaps.get(2),
-                                                             width / 2, height / 2,
-                                                             false);
-                    canvas.drawBitmap(third, width / 2, height / 2, null);
-                    toRecycle.add(second);
-                    toRecycle.add(third);
+                    canvas.drawBitmap(bitmaps.get(0), 0, 0, null);
+                    canvas.drawBitmap(b = scale(bitmaps.get(1)), width / 2, 0, null);
+                    b.recycle();
+                    canvas.drawBitmap(b = scale(bitmaps.get(2)), width / 2, height / 2, null);
+                    b.recycle();
                     break;
                 default:
                     Log.d("COLLAGE", "switch 4+");
                     for (int i = 0; i < 4; i++) {
-                        Bitmap b = Bitmap.createScaledBitmap(bitmaps.get(i),
-                                                             width / 2, height / 2,
-                                                             false);
                         int left = (i % 2) * (width / 2), top = (i / 2) * (height / 2);
-                        canvas.drawBitmap(b, left, top, null);
-                        toRecycle.add(b);
+                        canvas.drawBitmap(b = scale(bitmaps.get(i)), left, top, null);
+                        b.recycle();
                     }
                     break;
             }
 
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            bitmap.compress(Bitmap.CompressFormat.PNG, 0, bos);
-            toRecycle.add(bitmap);
+            resultBitmap.compress(Bitmap.CompressFormat.PNG, 0, bos);
+            resultBitmap.recycle();
+            for (Bitmap bitmap : bitmaps) {
+                bitmap.recycle();
+            }
 
             return new ByteArrayInputStream(bos.toByteArray());
         }
 
+        private Bitmap scale(final Bitmap bitmap) {
+            return Bitmap.createScaledBitmap(bitmap,
+                                             width / 2, height / 2,
+                                             false);
+        }
+
         @Override
         public void cleanup() {
-            Log.d("COLLAGE", String.format("cleanup %d", toRecycle.size()));
-            for (Bitmap b : toRecycle) {
-                b.recycle();
-            }
+
         }
 
         @Override

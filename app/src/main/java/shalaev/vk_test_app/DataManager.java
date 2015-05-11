@@ -104,7 +104,7 @@ public class DataManager {
     public void requestUsers(final ArrayList<Integer> chatIds) {
         VKRequest vkRequest = new VKRequest(
                 "messages.getChatUsers",
-                VKParameters.from("chat_ids", TextUtils.join(",", chatIds), "fields", "photo"));
+                VKParameters.from("chat_ids", TextUtils.join(",", chatIds), "fields", "photo_200"));
         vkRequest.executeWithListener(new VKRequest.VKRequestListener() {
             @Override
             public void onComplete(final VKResponse response) {
@@ -119,7 +119,7 @@ public class DataManager {
                         JSONObject jsonItem = jsonItems.optJSONObject(i);
                         items.add(jsonItem);
                         users.append(jsonItem.optInt("id"), jsonItem);
-                        collage.addUserPhoto(jsonItem.optString("photo"));
+                        collage.addUserPhoto(jsonItem.optString("photo_200"));
                     }
                     chatCollages.put(id, collage);
                     EVENT_BUS.post(new UsersEvent(id, items));
