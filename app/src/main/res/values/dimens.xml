@@ -3,8 +3,8 @@
     <dimen name="content_padding_narrow">8dp</dimen>
 
     <dimen name="chat_avatar_size">64dp</dimen>
-    <dimen name="message_avatar_size">48dp</dimen>
-    <dimen name="message_avatar_padding">53dp</dimen>
+    <dimen name="message_avatar_size">36dp</dimen>
+    <dimen name="message_avatar_padding">41dp</dimen>
 
     <dimen name="ts_chat_title">16sp</dimen>
     <dimen name="ts_chat_subtitle">15sp</dimen>
