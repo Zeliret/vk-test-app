@@ -17,16 +17,25 @@
         android:textAppearance="@style/TextAppearance.Custom.Message.Time"
         tools:text="23:17"/>
 
-    <TextView
-        android:id="@+id/message_body"
+    <LinearLayout
+        android:id="@+id/message"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@drawable/msg_out"
+        android:orientation="vertical"
         android:paddingBottom="@dimen/content_padding_narrow"
         android:paddingLeft="@dimen/content_padding_narrow"
         android:paddingRight="@dimen/content_padding"
-        android:paddingTop="@dimen/content_padding_narrow"
-        android:textAppearance="@style/TextAppearance.Custom.Message.Out"
-        tools:text="Ссообщение Ссообщение Ссообщение Ссообщение Ссообщение Ссообщение Ссообщение"/>
+        android:paddingTop="@dimen/content_padding_narrow">
+
+        <TextView
+            android:id="@+id/message_body"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.Custom.Message.Out"
+            tools:text="Ссообщение Ссообщение Ссообщение Ссообщение Ссообщение Ссообщение Ссообщение"/>
+
+        <include layout="@layout/inc_message_attachments" />
+    </LinearLayout>
 
 </LinearLayout>

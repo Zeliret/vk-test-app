@@ -1,4 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="_vk_app_id">4907381</string>
+    <string name="_photo_size">photo_604</string>
+    <string name="_sticker_size">photo_128</string>
+
+    <string-array name="_photo_sizes">
+        <item>photo_2560</item>
+        <item>photo_1280</item>
+        <item>photo_807</item>
+        <item>photo_604</item>
+        <item>photo_130</item>
+        <item>photo_75</item>
+    </string-array>
+    <string-array name="_sticker_sizes">
+        <item>photo_352</item>
+        <item>photo_256</item>
+        <item>photo_128</item>
+        <item>photo_64</item>
+    </string-array>
 </resources>

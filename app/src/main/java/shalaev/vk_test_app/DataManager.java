@@ -71,7 +71,9 @@ public class DataManager {
                 int length = jsonItems.length();
                 for (int i = 0; i < length; i++) {
                     JSONObject jsonItem = jsonItems.optJSONObject(i);
-                    items.add(jsonItem);
+                    if (!jsonItem.has("action")) {
+                        items.add(jsonItem);
+                    }
                 }
                 messages.put(chatId, items);
                 EVENT_BUS.post(new MessagesEvent(items));
@@ -100,8 +102,10 @@ public class DataManager {
                 int length = jsonItems.length();
                 for (int i = 0; i < length; i++) {
                     JSONObject jsonItem = jsonItems.optJSONObject(i);
-                    items.add(jsonItem);
-                    messages.get(chatId).add(jsonItem);
+                    if (!jsonItem.has("action")) {
+                        items.add(jsonItem);
+                        messages.get(chatId).add(jsonItem);
+                    }
                 }
                 EVENT_BUS.post(new MessagesExtraEvent(items, offset));
             }

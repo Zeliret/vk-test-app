@@ -39,7 +39,7 @@
         android:layout_height="match_parent"
         android:layout_below="@id/toolbar"
         android:divider="@null"
-        android:listSelector="@null"
+        android:listSelector="@android:color/transparent"
         android:smoothScrollbar="true"
         android:stackFromBottom="true"
         android:visibility="invisible"/>

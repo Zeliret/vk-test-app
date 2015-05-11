@@ -18,7 +18,7 @@ import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
-import shalaev.vk_test_app.utils.AvatarUtils;
+import shalaev.vk_test_app.utils.ImageUtils;
 
 
 public class ChatListActivity extends AbstractActivity {
@@ -116,7 +116,7 @@ public class ChatListActivity extends AbstractActivity {
             vh.message.setText(chat.optString("body"));
             vh.time.setText(dateFormat.format(new Date(chat.optLong("date") * 1000)));
 
-            AvatarUtils.loadAvatar(getContext(), chat.optString("photo_200"), vh.avatar);
+            ImageUtils.loadAvatar(getContext(), chat.optString("photo_200"), vh.avatar);
 
             return view;
         }

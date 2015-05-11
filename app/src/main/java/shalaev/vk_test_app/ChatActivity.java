@@ -1,17 +1,23 @@
 package shalaev.vk_test_app;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
+import android.text.TextUtils;
+import android.util.DisplayMetrics;
+import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -19,7 +25,8 @@ import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
-import shalaev.vk_test_app.utils.AvatarUtils;
+import shalaev.vk_test_app.utils.DataUtils;
+import shalaev.vk_test_app.utils.ImageUtils;
 
 
 public class ChatActivity extends AbstractActivity {
@@ -139,6 +146,7 @@ public class ChatActivity extends AbstractActivity {
         private static final int TYPE_OUT = 2;
         private final LayoutInflater inflater;
         private final DateFormat dateFormat = DateFormat.getTimeInstance(DateFormat.SHORT);
+        private final SparseArray<ArrayList<ImageView>> attachments = new SparseArray<>();
 
         public MessagesAdapter(final Context context) {
             super(context, 0, new ArrayList<JSONObject>());
@@ -162,18 +170,81 @@ public class ChatActivity extends AbstractActivity {
             }
 
             JSONObject message = getItem(position);
-            vh.body.setText(message.optString("body"));
-            vh.time.setText(dateFormat.format(new Date(message.optLong("date") * 1000)));
 
-            if (null != vh.avatar) {
+            loadBody(message, vh.body);
+            loadTime(message, vh.time);
+            loadAvatar(message, vh.avatar);
+            loadAttachments(message, vh.attachments);
+
+            return view;
+        }
+
+        private void loadTime(final JSONObject message, final TextView textView) {
+            textView.setText(dateFormat.format(new Date(message.optLong("date") * 1000)));
+        }
+
+        private void loadBody(final JSONObject message, final TextView textView) {
+            String body = message.optString("body");
+            textView.setVisibility(View.VISIBLE);
+            if (!TextUtils.isEmpty(body)) {
+                textView.setText(body);
+            } else {
+                textView.setVisibility(View.GONE);
+            }
+        }
+
+        private void loadAvatar(final JSONObject message, final ImageView imageView) {
+            if (null != imageView) {
                 DataManager dataManager = DataManager.getInstance();
                 JSONObject user = dataManager.getUser(message.optInt("user_id"));
                 if (null != user) {
-                    AvatarUtils.loadAvatar(getContext(), user.optString("photo"), vh.avatar);
+                    ImageUtils.loadAvatar(getContext(), user.optString("photo"), imageView);
                 }
             }
+        }
 
-            return view;
+        private void loadAttachments(final JSONObject message, final ViewGroup viewGroup) {
+            viewGroup.removeAllViews();
+
+            if (message.has("attachments")) {
+                int id = message.optInt("id");
+                ArrayList<ImageView> imageViews = attachments.get(id);
+                if (null != imageViews) {
+                    for (ImageView imageView : imageViews) {
+                        viewGroup.addView(imageView);
+                    }
+                } else {
+                    imageViews = new ArrayList<>();
+
+                    JSONArray jsonAttachments = message.optJSONArray("attachments");
+                    int length = jsonAttachments.length();
+                    for (int i = 0; i < length; i++) {
+                        JSONObject jsonAttachment = jsonAttachments.optJSONObject(i);
+                        String type = jsonAttachment.optString("type");
+                        JSONObject jsonAttachmentData = jsonAttachment.optJSONObject(type);
+                        String url = DataUtils.getPhotoUrl(getContext(),
+                                                           jsonAttachmentData,
+                                                           type);
+                        if (null != url) {
+                            ImageView imageView = new ImageView(getContext());
+                            imageView.setAdjustViewBounds(true);
+                            imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+                            viewGroup.addView(imageView, new ViewGroup.LayoutParams(
+                                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                                    ViewGroup.LayoutParams.WRAP_CONTENT));
+                            imageViews.add(imageView);
+                            ImageUtils.loadAttachment(getContext(), url, imageView);
+                        }
+                    }
+                    attachments.put(id, imageViews);
+                }
+            }
+        }
+
+        private int pxToDp(final int px) {
+            Resources resources = getContext().getResources();
+            DisplayMetrics metrics = resources.getDisplayMetrics();
+            return (int) (px / (metrics.densityDpi / 160f));
         }
 
         @Override
@@ -217,11 +288,13 @@ public class ChatActivity extends AbstractActivity {
             public final ImageView avatar;
             public final TextView body;
             public final TextView time;
+            public final LinearLayout attachments;
 
             public ViewHolder(final View view) {
                 avatar = (ImageView) view.findViewById(R.id.message_avatar);
                 body = (TextView) view.findViewById(R.id.message_body);
                 time = (TextView) view.findViewById(R.id.message_time);
+                attachments = (LinearLayout) view.findViewById(R.id.message_attachments);
             }
         }
     }
