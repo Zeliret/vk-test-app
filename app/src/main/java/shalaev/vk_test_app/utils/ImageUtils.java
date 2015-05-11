@@ -5,6 +5,8 @@ import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
 
+import shalaev.vk_test_app.R;
+
 public final class ImageUtils {
     public static void loadAvatar(final Context context, final String url,
                                   final ImageView imageView) {
@@ -18,6 +20,7 @@ public final class ImageUtils {
                                       final ImageView imageView) {
         Glide.with(context)
              .load(url)
+             .placeholder(R.drawable.image_placeholder)
              .into(imageView);
     }
 }

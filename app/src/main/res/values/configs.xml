@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="_vk_app_id">4907381</string>
-    <string name="_photo_size">photo_604</string>
-    <string name="_sticker_size">photo_128</string>
 
     <string-array name="_photo_sizes">
         <item>photo_2560</item>
