@@ -14,7 +14,7 @@
     <RelativeLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="left">
+        android:gravity="left">
 
         <TextView
             android:id="@+id/message_time"
@@ -45,7 +45,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="@style/TextAppearance.Custom.Message"
-                tools:text="Ссообщение Ссообщение Ссообщение Ссообщение Ссообщение Ссообщение "/>
+                tools:text="Ссообщение "/>
 
             <include layout="@layout/inc_message_attachments"/>
         </LinearLayout>
