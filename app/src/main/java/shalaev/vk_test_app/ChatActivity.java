@@ -105,6 +105,11 @@ public class ChatActivity extends AbstractActivity {
         }
     }
 
+    @SuppressWarnings("unused")
+    public void onEventMainThread(final DataManager.ErrorEvent event) {
+        displayError(event.error.errorMessage);
+    }
+
     private void renderAppend(final ArrayList<JSONObject> items) {
         if (items.size() > 0) {
             int firstVisibleItem = listView.getFirstVisiblePosition();

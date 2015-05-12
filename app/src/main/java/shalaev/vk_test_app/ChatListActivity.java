@@ -75,6 +75,11 @@ public class ChatListActivity extends AbstractActivity {
        adapter.notifyDataSetChanged();
     }
 
+    @SuppressWarnings("unused")
+    public void onEventMainThread(final DataManager.ErrorEvent event) {
+        displayError(event.error.errorMessage);
+    }
+
     private void requestUsers(final ArrayList<JSONObject> items) {
         ArrayList<Integer> ids = new ArrayList<>();
         for (JSONObject item : items) {

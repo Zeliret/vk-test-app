@@ -7,15 +7,16 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.nispok.snackbar.Snackbar;
+import com.nispok.snackbar.SnackbarManager;
+import com.nispok.snackbar.enums.SnackbarType;
+import com.nispok.snackbar.listeners.ActionClickListener;
 import com.vk.sdk.VKAccessToken;
 import com.vk.sdk.VKScope;
 import com.vk.sdk.VKSdk;
 import com.vk.sdk.VKSdkListener;
-import com.vk.sdk.VKSdkVersion;
 import com.vk.sdk.VKUIHelper;
-import com.vk.sdk.api.VKApi;
 import com.vk.sdk.api.VKError;
-import com.vk.sdk.util.VKUtil;
 
 import de.greenrobot.event.EventBus;
 
@@ -125,5 +126,26 @@ public abstract class AbstractActivity extends AppCompatActivity {
             Log.d("VK", "onReceiveNewToken");
             completeAuth();
         }
+    }
+
+    public void displayError(final String message) {displayError(message, null);}
+
+    public void displayError(final String message, final Runnable callback) {
+        Snackbar snackbar = Snackbar.with(this)
+                                    .text(message)
+                                    .textColorResource(android.R.color.white)
+                                    .type(SnackbarType.MULTI_LINE)
+                                    .duration(Snackbar.SnackbarDuration.LENGTH_INDEFINITE)
+                                    .swipeToDismiss(false);
+        if (null != callback) {
+            snackbar.actionLabel(R.string.retry)
+                    .actionListener(new ActionClickListener() {
+                        @Override
+                        public void onActionClicked(final Snackbar snackbar) {
+                            callback.run();
+                        }
+                    });
+        }
+        SnackbarManager.show(snackbar);
     }
 }

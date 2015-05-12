@@ -23,5 +23,6 @@ dependencies {
     compile 'com.android.support:appcompat-v7:22.1.1'
     compile 'com.github.bumptech.glide:glide:3.6.0'
     compile 'de.greenrobot:eventbus:2.4.0'
+    compile 'com.nispok:snackbar:2.10.+'
     compile project(':vk-android-sdk:vksdk_library')
 }
