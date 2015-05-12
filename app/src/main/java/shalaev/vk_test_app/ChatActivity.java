@@ -31,7 +31,7 @@ import shalaev.vk_test_app.utils.ImageUtils;
 
 public class ChatActivity extends AbstractActivity {
     public static final String KEY_CHAT = "chat";
-    private static final int THRESHOLD = 5;
+    private static final int THRESHOLD = 8;
     private ListView listView;
     private View progressView;
     private View headerProgressView;
