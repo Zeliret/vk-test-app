@@ -135,7 +135,7 @@ public class DataManager {
         });
     }
 
-    public void requestLongPoll(final int chatId) {
+    /*public void requestLongPoll(final int chatId) {
         VKRequest vkRequest = new VKRequest("messages.getLongPollServer");
         vkRequest.executeWithListener(new VKRequest.VKRequestListener() {
             @Override
@@ -172,7 +172,7 @@ public class DataManager {
                 EVENT_BUS.post(new ErrorEvent(error));
             }
         });
-    }
+    }*/
 
     public JSONObject getUser(final int user_id) {
         return users.get(user_id);

@@ -135,7 +135,6 @@ public class ChatActivity extends AbstractActivity {
             progressView.setVisibility(View.INVISIBLE);
         }
         scrollReady = true;
-        dataManager.requestLongPoll(chatId);
     }
 
     public static final class MessagesAdapter extends ArrayAdapter<JSONObject> {
