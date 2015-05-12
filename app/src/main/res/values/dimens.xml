@@ -7,7 +7,7 @@
 
     <dimen name="chat_avatar_size">64dp</dimen>
     <dimen name="message_avatar_size">32dp</dimen>
-    <dimen name="message_avatar_padding">41dp</dimen>
+    <dimen name="message_avatar_padding">37dp</dimen>
 
     <dimen name="ts_chat_title">16sp</dimen>
     <dimen name="ts_chat_subtitle">15sp</dimen>

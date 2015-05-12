@@ -11,8 +11,11 @@ import com.vk.sdk.VKAccessToken;
 import com.vk.sdk.VKScope;
 import com.vk.sdk.VKSdk;
 import com.vk.sdk.VKSdkListener;
+import com.vk.sdk.VKSdkVersion;
 import com.vk.sdk.VKUIHelper;
+import com.vk.sdk.api.VKApi;
 import com.vk.sdk.api.VKError;
+import com.vk.sdk.util.VKUtil;
 
 import de.greenrobot.event.EventBus;
 
@@ -24,6 +27,9 @@ public abstract class AbstractActivity extends AppCompatActivity {
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         VKUIHelper.onCreate(this);
+//        String[] fingerprint =
+//                VKUtil.getCertificateFingerprint(this, this.getPackageName());
+//        Log.d("FINGER", fingerprint[0]);
     }
 
     @Override
