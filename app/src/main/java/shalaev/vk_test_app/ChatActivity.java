@@ -279,6 +279,10 @@ public class ChatActivity extends AbstractActivity {
                 ArrayList<ImageView> imageViews = attachments.get(id);
                 if (null != imageViews) {
                     for (ImageView imageView : imageViews) {
+                        ViewGroup parent = (ViewGroup) imageView.getParent();
+                        if (null != parent) {
+                            parent.removeView(imageView);
+                        }
                         viewGroup.addView(imageView);
                     }
                 } else {
