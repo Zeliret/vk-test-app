@@ -1,11 +1,9 @@
 package shalaev.vk_test_app;
 
 import android.content.Context;
-import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.text.TextUtils;
-import android.util.DisplayMetrics;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -40,6 +38,28 @@ public class ChatActivity extends AbstractActivity {
     private DataManager dataManager = DataManager.getInstance();
     private int chatId;
     private boolean scrollReady = false;
+    private ImageView avatarView;
+
+    @SuppressWarnings("unused")
+    public void onEventMainThread(final DataManager.MessagesEvent event) {
+        if (event.offset > 0) {
+            renderAppend(event.items);
+        } else {
+            render(event.items);
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public void onEventMainThread(final DataManager.ErrorEvent event) {
+        displayError(event.error.errorMessage);
+    }
+
+    @SuppressWarnings("unused")
+    public void onEventMainThread(final DataManager.UsersEvent event) {
+        if (event.chatId == chatId) {
+            renderTitleIcon(null);
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,6 +79,7 @@ public class ChatActivity extends AbstractActivity {
         listView.setOnScrollListener(new MessagesScrollListener());
 
         progressView = findViewById(R.id.messages_list_progress);
+        avatarView = (ImageView) findViewById(R.id.toolbar_avatar);
 
         try {
             JSONObject chat = new JSONObject(getIntent().getStringExtra(KEY_CHAT));
@@ -73,6 +94,8 @@ public class ChatActivity extends AbstractActivity {
                                                                usersCount);
             TextView subtitleView = (TextView) findViewById(R.id.toolbar_subtitle);
             subtitleView.setText(subtitle);
+
+            renderTitleIcon(chat.optString("photo_200"));
         } catch (JSONException ignored) {
         }
     }
@@ -96,18 +119,19 @@ public class ChatActivity extends AbstractActivity {
         }
     }
 
-    @SuppressWarnings("unused")
-    public void onEventMainThread(final DataManager.MessagesEvent event) {
-        if (event.offset > 0) {
-            renderAppend(event.items);
-        } else {
-            render(event.items);
+    private void renderTitleIcon(final String url) {
+        if (null != avatarView && null == avatarView.getTag()) {
+            if (!TextUtils.isEmpty(url)) {
+                ImageUtils.loadSimpleAvatar(this, url, avatarView);
+                avatarView.setTag(true);
+            } else {
+                ImageUtils.Collage collage = dataManager.getCollage(chatId);
+                if (null != collage) {
+                    ImageUtils.loadCollageAvatar(this, collage, avatarView);
+                    avatarView.setTag(true);
+                }
+            }
         }
-    }
-
-    @SuppressWarnings("unused")
-    public void onEventMainThread(final DataManager.ErrorEvent event) {
-        displayError(event.error.errorMessage);
     }
 
     private void renderAppend(final ArrayList<JSONObject> items) {
@@ -181,6 +205,43 @@ public class ChatActivity extends AbstractActivity {
             return view;
         }
 
+        @Override
+        public JSONObject getItem(final int position) {
+            int count = getCount();
+            int reversePos = (count > 0 ? count - 1 : 0) - position;
+
+            return super.getItem(reversePos);
+        }
+
+        @Override
+        public int getViewTypeCount() {
+            return RES.length;
+        }
+
+        @Override
+        public int getItemViewType(final int position) {
+            JSONObject message = getItem(position);
+            if (message.optInt("out") > 0) {
+                return TYPE_OUT;
+            } else {
+                try {
+                    JSONObject prevMessage = getItem(position - 1);
+                    if (prevMessage.optInt("user_id") == message.optInt("user_id")) {
+                        return TYPE_IN;
+                    } else {
+                        return TYPE_IN_FIRST;
+                    }
+                } catch (IndexOutOfBoundsException e) {
+                    return TYPE_IN_FIRST;
+                }
+            }
+        }
+
+        @Override
+        public boolean hasStableIds() {
+            return true;
+        }
+
         private void loadTime(final JSONObject message, final TextView textView) {
             textView.setText(dateFormat.format(new Date(message.optLong("date") * 1000)));
         }
@@ -200,7 +261,9 @@ public class ChatActivity extends AbstractActivity {
                 DataManager dataManager = DataManager.getInstance();
                 JSONObject user = dataManager.getUser(message.optInt("user_id"));
                 if (null != user) {
-                    ImageUtils.loadSimpleAvatar(getContext(), user.optString("photo_200"), imageView);
+                    ImageUtils.loadSimpleAvatar(getContext(),
+                                                user.optString("photo_200"),
+                                                imageView);
                 }
             }
         }
@@ -245,49 +308,6 @@ public class ChatActivity extends AbstractActivity {
                     attachments.put(id, imageViews);
                 }
             }
-        }
-
-        private int pxToDp(final int px) {
-            Resources resources = getContext().getResources();
-            DisplayMetrics metrics = resources.getDisplayMetrics();
-            return (int) (px / (metrics.densityDpi / 160f));
-        }
-
-        @Override
-        public JSONObject getItem(final int position) {
-            int count = getCount();
-            int reversePos = (count > 0 ? count - 1 : 0) - position;
-
-            return super.getItem(reversePos);
-        }
-
-        @Override
-        public int getViewTypeCount() {
-            return RES.length;
-        }
-
-        @Override
-        public int getItemViewType(final int position) {
-            JSONObject message = getItem(position);
-            if (message.optInt("out") > 0) {
-                return TYPE_OUT;
-            } else {
-                try {
-                    JSONObject prevMessage = getItem(position - 1);
-                    if (prevMessage.optInt("user_id") == message.optInt("user_id")) {
-                        return TYPE_IN;
-                    } else {
-                        return TYPE_IN_FIRST;
-                    }
-                } catch (IndexOutOfBoundsException e) {
-                    return TYPE_IN_FIRST;
-                }
-            }
-        }
-
-        @Override
-        public boolean hasStableIds() {
-            return true;
         }
 
         private class ViewHolder {

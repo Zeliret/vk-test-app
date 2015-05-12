@@ -13,23 +13,38 @@
 
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center_vertical">
+            android:layout_height="match_parent">
 
-            <TextView
-                android:id="@+id/toolbar_title"
-                android:layout_width="match_parent"
+            <LinearLayout
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.Custom.Widget.ActionBar.Title"
-                tools:text="Название беседы"/>
+                android:layout_centerVertical="true"
+                android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/toolbar_subtitle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/toolbar_title"
-                android:textAppearance="@style/TextAppearance.Custom.Widget.ActionBar.Subtitle"
-                tools:text="5 участников"/>
+                <TextView
+                    android:id="@+id/toolbar_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.Custom.Widget.ActionBar.Title"
+                    tools:text="Название беседы"/>
+
+                <TextView
+                    android:id="@+id/toolbar_subtitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/toolbar_title"
+                    android:textAppearance="@style/TextAppearance.Custom.Widget.ActionBar.Subtitle"
+                    tools:text="5 участников"/>
+            </LinearLayout>
+
+            <ImageView
+                android:id="@+id/toolbar_avatar"
+                android:layout_width="@dimen/chat_avatar_title_size"
+                android:layout_height="@dimen/chat_avatar_title_size"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:layout_marginRight="@dimen/content_padding_narrow"
+                android:src="@drawable/avatar_dummy"/>
         </RelativeLayout>
     </android.support.v7.widget.Toolbar>
 
